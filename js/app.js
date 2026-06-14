@@ -37,7 +37,7 @@ Profissional experiente. Sem nome. Sem IA. Fale diretamente, com elegância. Sem
 💵 Preço: [copie exatamente o CUSTO_MEDIO do acervo — não calcule, não invente]
 ✅ [motivo em 1 frase direta conectando o vinho ao pedido do cliente]
 
-Finalize com uma linha começando com 💡 — dica de serviço ou curiosidade. Uma frase.`;
+`;
 
 /* ═══════════════════════════════════════════════════════════
    MÓDULO auth
@@ -1100,7 +1100,7 @@ function formatReply(raw) {
       current.grapes  ? `<div class="wc-line"><span class="wc-line-icon">🍇</span><span class="wc-line-label">Uva</span><span class="wc-line-val">${esc(current.grapes)}</span></div>`         : '',
       current.temp    ? `<div class="wc-line"><span class="wc-line-icon">🌡️</span><span class="wc-line-label">Temperatura</span><span class="wc-line-val">${esc(current.temp)}</span></div>`   : '',
       current.pairing ? `<div class="wc-line"><span class="wc-line-icon">🍽️</span><span class="wc-line-label">Harmoniza</span><span class="wc-line-val">${esc(current.pairing)}</span></div>` : '',
-      current.aromas  ? `<div class="wc-line"><span class="wc-line-icon">🌸</span><span class="wc-line-label">Aromas</span><span class="wc-line-val wc-italic">${esc(current.aromas)}</span></div>` : '',
+      current.aromas  ? `<div class="wc-line"><span class="wc-line-icon">🌸</span><span class="wc-line-label">Aromas</span><span class="wc-line-val">${esc(current.aromas)}</span></div>` : '',
     ].filter(Boolean).join('');
 
     const infoBlock = infoLines
@@ -1108,9 +1108,7 @@ function formatReply(raw) {
       : '';
 
     // ── CUSTO-BENEFÍCIO (só na 3ª opção) ──
-    const cb = current.costbenefit
-      ? `<div class="wc-cb-row">💡 ${esc(current.costbenefit)}</div>`
-      : '';
+    const cb = ''; // custo-benefício removido do card
 
     // ── RODAPÉ: motivo + preço lado a lado ──
     const footer = (current.why || current.priceDisplay)
@@ -1178,7 +1176,7 @@ function formatReply(raw) {
 
   flush();
   if (cards.length) html += `<div class="wines">${cards.map(c => `<div class="wine">${c}</div>`).join('')}</div>`;
-  if (tip) html += `<div class="tip-bar">${esc(tip)}</div>`;
+  // tip-bar (💡) removido
   return html;
 }
 
