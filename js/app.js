@@ -849,6 +849,17 @@ const WIZARD_STEPS = [
     ],
   },
   {
+    key: 'pairing',
+    question: 'Com qual prato você deseja harmonizar o vinho?',
+    options: [
+      { emoji: '🥩', label: 'Carnes vermelhas' },
+      { emoji: '🐟', label: 'Peixes e frutos do mar' },
+      { emoji: '🍝', label: 'Massas' },
+      { emoji: '🧀', label: 'Queijos e frios' },
+      { emoji: '🍽️', label: 'Não vou harmonizar com comida' },
+    ],
+  },
+  {
     key: 'price',
     question: 'Qual faixa de preço você procura?',
     options: [
@@ -875,7 +886,7 @@ const WIZARD_STEPS = [
 
 function renderOpener() {
   wizard.step = 0;
-  wizard.answers = { knowledge: '', occasion: '', price: '', country: '' };
+  wizard.answers = { knowledge: '', occasion: '', pairing: '', price: '', country: '' };
   renderWizardStep();
 }
 
@@ -934,7 +945,7 @@ function wizardSelect(stepIdx, label) {
 }
 
 function wizardFinish() {
-  const { knowledge, occasion, price, country } = wizard.answers;
+  const { knowledge, occasion, pairing, price, country } = wizard.answers;
 
   // Monta texto da mensagem com base nas respostas
   const knowledgeMap = {
@@ -963,11 +974,15 @@ function wizardFinish() {
     ? `, preferencialmente de ${country}`
     : '';
 
+  const pairingPart = pairing && pairing !== 'Não vou harmonizar com comida'
+    ? `, harmonizando com ${pairing.toLowerCase()}`
+    : '';
+
   const knowledgePart = knowledgeMap[knowledge] || knowledge;
   const occasionPart  = occasionMap[occasion]   || `para ${occasion}`;
   const pricePart     = priceMap[price]         || price;
 
-  const query = `${knowledgePart}. Estou buscando um vinho ${occasionPart}, ${pricePart}${countryPart}. Por favor, recomende 3 opções do acervo.`;
+  const query = `${knowledgePart}. Estou buscando um vinho ${occasionPart}${pairingPart}, ${pricePart}${countryPart}. Por favor, recomende 3 opções do acervo e mencione brevemente a compatibilidade com o prato quando aplicável.`;
 
   // Remove opener e envia como mensagem do usuário
   const op = document.getElementById('opener');
