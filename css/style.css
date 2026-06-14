@@ -287,7 +287,7 @@ body::before {
   color: var(--gold); padding-top: 1px;
 }
 .wc-val { color: var(--ink-2); }
-
+.wc-italic { font-style: italic; font-family: var(--serif); font-size: 13.5px; }
 
 /* Por que para você */
 .wc-why {
@@ -489,7 +489,12 @@ body::before {
   color: var(--ink);
   font-weight: 400;
 }
-
+.wc-italic {
+  font-style: italic;
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--ink-2);
+}
 
 /* Frase custo-benefício */
 .wc-cb-row {

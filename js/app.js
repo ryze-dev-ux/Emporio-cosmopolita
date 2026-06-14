@@ -917,7 +917,7 @@ function renderWizardStep() {
       <img src="logo.png" alt="Empório Cosmopolita" class="opener-logo">
       <p class="opener-eyebrow">— Bem-vindo</p>
       ${progressBar}
-      <h1 class="opener-title wz-question">${step.question}</h1>
+      <h1 class="opener-title">${step.question}</h1>
       <div class="wz-options">${buttons}</div>
     </div>`;
 
