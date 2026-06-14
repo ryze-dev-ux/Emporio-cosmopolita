@@ -892,13 +892,14 @@ function renderWizardStep() {
     </div>
     <p class="wz-step-label">Etapa ${wizard.step + 1} de ${WIZARD_STEPS.length}</p>`;
 
-  // Botões de opção
-  const buttons = step.options.map(opt =>
-    `<button class="wz-option" onclick="wizardSelect(${wizard.step}, ${JSON.stringify(opt.label)})">
-      <span class="wz-opt-emoji">${opt.emoji}</span>
-      <span class="wz-opt-label">${opt.label}</span>
-    </button>`
-  ).join('');
+  // Botões de opção — usa data-label para evitar conflito de aspas no onclick
+  const buttons = step.options.map(opt => {
+    const safeLabel = opt.label.replace(/'/g, '&#39;');
+    return `<button class="wz-option" data-step="${wizard.step}" data-label="${safeLabel}">` +
+      `<span class="wz-opt-emoji">${opt.emoji}</span>` +
+      `<span class="wz-opt-label">${opt.label}</span>` +
+      `</button>`;
+  }).join('');
 
   thread.innerHTML = `
     <div class="opener" id="opener">
@@ -908,6 +909,15 @@ function renderWizardStep() {
       <h1 class="opener-title wz-question">${step.question}</h1>
       <div class="wz-options">${buttons}</div>
     </div>`;
+
+  // Adiciona event listeners após inserir no DOM
+  thread.querySelectorAll('.wz-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const stepIdx = parseInt(btn.dataset.step, 10);
+      const label   = btn.querySelector('.wz-opt-label').textContent.trim();
+      wizardSelect(stepIdx, label);
+    });
+  });
 }
 
 function wizardSelect(stepIdx, label) {
@@ -917,7 +927,6 @@ function wizardSelect(stepIdx, label) {
   wizard.step = stepIdx + 1;
 
   if (wizard.step >= WIZARD_STEPS.length) {
-    // Todas etapas respondidas — monta query e envia
     wizardFinish();
   } else {
     renderWizardStep();
