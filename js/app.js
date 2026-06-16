@@ -1191,9 +1191,12 @@ function formatReply(raw) {
       if (/custo.benef/i.test(line) && /^💰/.test(line)) {
         current.costbenefit = val;
       } else if (/^💵|Preço estimado/i.test(line)) {
-        // Garante que o valor começa com R$
-        const pv = val.trim();
-        current.priceDisplay = /^R\$/i.test(pv) ? pv : 'R$ ' + pv;
+        // Garante R$ e centavos (ex: "249" → "R$ 249,00", "R$ 100" → "R$ 100,00")
+        const pv  = val.trim().replace(/^R\$\s*/i, '');
+        const num = parseFloat(pv.replace(/\./g, '').replace(',', '.'));
+        current.priceDisplay = !isNaN(num)
+          ? 'R$ ' + num.toFixed(2).replace('.', ',')
+          : 'R$ ' + pv;
       } else if (/^💰/.test(line) && !current.costbenefit) {
         const m = line.match(/R\$[^\n,;]*/i);
         current.price = m ? m[0].trim() : val;
