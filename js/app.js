@@ -1050,8 +1050,16 @@ async function sendMessage() {
 
 async function callApi() {
   const recent  = state.history.slice(-HISTORY_TURNS * 2);
-  // Envia o catálogo junto — garante que o servidor sempre tem os vinhos
   const catalog = winesDB.getCatalog();
+  let wines = catalog ? catalog.wines : [];
+
+  // Filtra por país se o wizard tiver selecionado um
+  const selectedCountry = wizard.answers.country;
+  if (selectedCountry && selectedCountry !== 'Sem preferência') {
+    const filtered = wines.filter(w => w.country === selectedCountry);
+    if (filtered.length >= 3) wines = filtered; // só aplica se houver vinhos suficientes
+  }
+
   const res = await fetch(API_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1059,7 +1067,7 @@ async function callApi() {
       system:    SYSTEM_PROMPT,
       messages:  recent,
       max_tokens: 1400,
-      wines:     catalog ? catalog.wines : [],
+      wines,
     }),
   });
   if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }

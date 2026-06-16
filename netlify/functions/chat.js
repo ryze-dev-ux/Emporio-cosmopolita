@@ -74,14 +74,21 @@ function retrieve(wines, msg, max) {
 }
 
 function wineCtx(w) {
-  // Usa o custo médio exato da planilha — sem calcular nada
-  const custo = w.cost_display && w.cost_display !== 'R$ 0,00' ? w.cost_display : 'consultar';
+  // Custo médio exato — tenta cost_display, depois monta de cost_value
+  let custo = 'consultar';
+  if (w.cost_display && w.cost_display !== 'R$ 0,00' && w.cost_display !== '0') {
+    custo = w.cost_display;
+  } else if (w.cost_value && w.cost_value > 0) {
+    custo = 'R$ ' + Number(w.cost_value).toFixed(2).replace('.', ',');
+  }
+
+  const winery = w.winery || w.producer || '';
 
   return [
-    '• ' + w.name,
+    '• ' + w.name + (winery ? ' | Vinícola: ' + winery : ''),
     '  Tipo: ' + (w.type || '—') + ' | País: ' + (w.country || '—') + ' | Uva: ' + (w.grapes || '—'),
     '  Temperatura: ' + (w.temperature || '—'),
-    '  CUSTO_MEDIO: ' + custo + '  ← exiba este valor EXATO na linha 💵',
+    '  CUSTO_MEDIO: ' + custo + '  ← copie este valor EXATO na linha 💵, sem alterar',
     '  Harmoniza: ' + (w.pairing || '—'),
   ].join('\n');
 }
