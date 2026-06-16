@@ -1116,10 +1116,11 @@ function formatReply(raw) {
     const cleanName = current.name.replace(/[\[\]]/g, '').trim();
 
     // País vem do catálogo importado (buscamos pelo nome do vinho)
-    const wineObj    = (catalog?.wines || []).find(w => w.name === cleanName || w.name === current.name);
-    const country    = wineObj?.country || '';
-    const winery     = wineObj?.winery  || wineObj?.producer || current.maker || '';
-    const flagHtml   = country ? countryFlag(country) : '';
+    const _cat    = winesDB.getCatalog();
+    const wineObj = (_cat?.wines || []).find(w => w.name === cleanName || w.name === current.name);
+    const country = wineObj?.country || '';
+    const winery  = wineObj?.winery  || wineObj?.producer || current.maker || '';
+    const flagHtml = country ? countryFlag(country) : '';
 
     const header =
       `<div class="wc-header">` +
