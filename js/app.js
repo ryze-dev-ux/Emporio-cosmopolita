@@ -283,6 +283,7 @@ const winesDB = (() => {
     qty:         ['qtd atual','quantidade','qty','estoque','stock','qtd','saldo'],
     cost:        ['custo medio','custo médio','preco','preço','price','custo'],
     country:     ['pais de origem','país de origem','pais','país','country'],
+    winery:      ['vinícola','vinicola','produtor','winery','producer'],
     grapes:      ['uva / casta','uva/casta','uva','casta','grape','uvas','varietal'],
     type:        ['tipo','type','categoria','estilo'],
     temperature: ['temperatura de servico','temperatura de serviço','temperatura','temp'],
@@ -404,14 +405,18 @@ const winesDB = (() => {
 
     const type = get('type');
 
+    // Vinícola: prefere coluna dedicada, fallback para extração do nome
+    const winery = get('winery') || producer;
+
     return {
       id:           'r' + idx,
       name,
-      producer,
+      producer:     winery,   // vinícola da coluna ou extraída
       qty,
       cost_display: costRaw,
       cost_value:   costNum,
       country:      get('country'),
+      winery,
       grapes:       get('grapes'),
       type,
       color:        _detectColor(type),
@@ -831,55 +836,57 @@ const WIZARD_STEPS = [
     key: 'knowledge',
     question: 'Você conhece vinhos?',
     options: [
-      { emoji: '🍷', label: 'Sou iniciante' },
-      { emoji: '🍷', label: 'Conheço um pouco' },
-      { emoji: '🍷', label: 'Entendo de vinhos' },
-      { emoji: '🤷', label: 'Apenas me recomende algo bom' },
+      { emoji: '', label: 'Sou iniciante' },
+      { emoji: '', label: 'Conheço um pouco' },
+      { emoji: '', label: 'Entendo de vinhos' },
+      { emoji: '', label: 'Apenas me recomende algo bom' },
     ],
   },
   {
     key: 'occasion',
     question: 'Para qual ocasião você procura o vinho?',
     options: [
-      { emoji: '❤️',  label: 'Jantar ou momento a dois' },
-      { emoji: '🍽️', label: 'Refeição (almoço ou jantar)' },
-      { emoji: '🎉', label: 'Festa, encontro ou comemoração' },
-      { emoji: '🎁', label: 'Presente' },
-      { emoji: '🛋️', label: 'Relaxar e apreciar' },
+      { emoji: '', label: 'Jantar ou momento a dois' },
+      { emoji: '', label: 'Refeição (almoço ou jantar)' },
+      { emoji: '', label: 'Festa, encontro ou comemoração' },
+      { emoji: '', label: 'Presente' },
+      { emoji: '', label: 'Relaxar e apreciar' },
     ],
   },
   {
     key: 'pairing',
     question: 'Com qual prato você deseja harmonizar o vinho?',
     options: [
-      { emoji: '🥩', label: 'Carnes vermelhas' },
-      { emoji: '🐟', label: 'Peixes e frutos do mar' },
-      { emoji: '🍝', label: 'Massas' },
-      { emoji: '🧀', label: 'Queijos e frios' },
-      { emoji: '🍽️', label: 'Não vou harmonizar com comida' },
+      { emoji: '', label: 'Carnes vermelhas' },
+      { emoji: '', label: 'Peixes e frutos do mar' },
+      { emoji: '', label: 'Massas' },
+      { emoji: '', label: 'Queijos e frios' },
+      { emoji: '', label: 'Não vou harmonizar com comida' },
     ],
   },
   {
     key: 'price',
     question: 'Qual faixa de preço você procura?',
     options: [
-      { emoji: '💰',    label: 'Até R$ 70',        max: 70 },
-      { emoji: '💰💰',  label: 'R$ 71 a R$ 150',   min: 71,  max: 150 },
-      { emoji: '💰💰💰',label: 'R$ 151 a R$ 300',  min: 151, max: 300 },
-      { emoji: '👑',    label: 'Acima de R$ 300',  min: 301 },
+      { emoji: '', label: 'Até R$ 70',        max: 70 },
+      { emoji: '', label: 'R$ 71 a R$ 150',   min: 71,  max: 150 },
+      { emoji: '', label: 'R$ 151 a R$ 300',  min: 151, max: 300 },
+      { emoji: '', label: 'Acima de R$ 300',  min: 301 },
     ],
   },
   {
     key: 'country',
     question: 'Tem preferência por país?',
     options: [
-      { emoji: '🇧🇷', label: 'Brasil' },
-      { emoji: '🇨🇱', label: 'Chile' },
-      { emoji: '🇦🇷', label: 'Argentina' },
-      { emoji: '🇵🇹', label: 'Portugal' },
-      { emoji: '🇫🇷', label: 'França' },
-      { emoji: '🇮🇹', label: 'Itália' },
-      { emoji: '🌍', label: 'Sem preferência' },
+      { emoji: 'br', label: 'Brasil',           flag: true },
+      { emoji: 'cl', label: 'Chile',            flag: true },
+      { emoji: 'ar', label: 'Argentina',        flag: true },
+      { emoji: 'pt', label: 'Portugal',         flag: true },
+      { emoji: 'fr', label: 'França',           flag: true },
+      { emoji: 'it', label: 'Itália',           flag: true },
+      { emoji: 'es', label: 'Espanha',          flag: true },
+      { emoji: 'uy', label: 'Uruguai',          flag: true },
+      { emoji: '',   label: 'Sem preferência',  flag: false },
     ],
   },
 ];
@@ -895,33 +902,29 @@ function renderWizardStep() {
   const step   = WIZARD_STEPS[wizard.step];
   if (!step) return;
 
-  // Barra de progresso
-  const pct = Math.round((wizard.step / WIZARD_STEPS.length) * 100);
-  const progressBar = `
-    <div class="wz-progress">
-      <div class="wz-progress-bar" style="width:${pct}%"></div>
-    </div>
-    <p class="wz-step-label">Etapa ${wizard.step + 1} de ${WIZARD_STEPS.length}</p>`;
+  // Progresso como eyebrow discreta — mesma classe do original
+  const stepLabel = `Etapa ${wizard.step + 1} de ${WIZARD_STEPS.length}`;
 
-  // Botões de opção — usa data-label para evitar conflito de aspas no onclick
-  const buttons = step.options.map(opt => {
-    const safeLabel = opt.label.replace(/'/g, '&#39;');
-    return `<button class="wz-option" data-step="${wizard.step}" data-label="${safeLabel}">` +
-      `<span class="wz-opt-emoji">${opt.emoji}</span>` +
-      `<span class="wz-opt-label">${opt.label}</span>` +
-      `</button>`;
+  // Cards de opção — usa exatamente .prompt-card do design original
+  const cards = step.options.map(opt => {
+    const icon = opt.flag
+      ? `<img src="https://flagcdn.com/24x18/${opt.emoji}.png" srcset="https://flagcdn.com/48x36/${opt.emoji}.png 2x" width="24" height="18" alt="${opt.label}" class="wz-flag">`
+      : `<span class="prompt-eyebrow">${opt.emoji}</span>`;
+    return `<button class="prompt-card wz-option" data-step="${wizard.step}">` +
+      icon +
+      `<span class="prompt-text wz-opt-label">${opt.label}</span>` +
+    `</button>`;
   }).join('');
 
   thread.innerHTML = `
     <div class="opener" id="opener">
       <img src="logo.png" alt="Empório Cosmopolita" class="opener-logo">
-      <p class="opener-eyebrow">— Bem-vindo</p>
-      ${progressBar}
+      <p class="opener-eyebrow">— ${stepLabel}</p>
       <h1 class="opener-title">${step.question}</h1>
-      <div class="wz-options">${buttons}</div>
+      <div class="prompt-grid">${cards}</div>
     </div>`;
 
-  // Adiciona event listeners após inserir no DOM
+  // Event listeners após inserir no DOM (evita conflito de aspas)
   thread.querySelectorAll('.wz-option').forEach(btn => {
     btn.addEventListener('click', () => {
       const stepIdx = parseInt(btn.dataset.step, 10);
@@ -1079,6 +1082,29 @@ function appendMessage(role, content, { instant = false } = {}) {
 }
 
 /* ── Parser → cards ─────────────────────────────────────── */
+
+/* ── Mapa de bandeiras por país ─────────────────────────────────────────── */
+const COUNTRY_FLAGS = {
+  'Argentina':      'ar',
+  'Austrália':      'au',
+  'Brasil':         'br',
+  'Chile':          'cl',
+  'Espanha':        'es',
+  'Estados Unidos': 'us',
+  'França':         'fr',
+  'Israel':         'il',
+  'Itália':         'it',
+  'Líbano':         'lb',
+  'Portugal':       'pt',
+  'Uruguai':        'uy',
+  'África do Sul':  'za',
+};
+
+function countryFlag(country) {
+  const cc = COUNTRY_FLAGS[country];
+  if (!cc) return '';
+  return `<img src="https://flagcdn.com/16x12/${cc}.png" srcset="https://flagcdn.com/32x24/${cc}.png 2x" width="16" height="12" alt="${country}" class="wc-flag">`;
+}
 function formatReply(raw) {
   const lines = raw.split('\n');
   let html = '', cards = [], current = null, tip = '';
@@ -1086,11 +1112,20 @@ function formatReply(raw) {
   const flush = () => {
     if (!current) return;
 
-    // ── HEADER ──
+    // ── HEADER: Nome (negrito) → Vinícola (menor) → País com bandeira ──
+    const cleanName = current.name.replace(/[\[\]]/g, '').trim();
+
+    // País vem do catálogo importado (buscamos pelo nome do vinho)
+    const wineObj    = (catalog?.wines || []).find(w => w.name === cleanName || w.name === current.name);
+    const country    = wineObj?.country || '';
+    const winery     = wineObj?.winery  || wineObj?.producer || current.maker || '';
+    const flagHtml   = country ? countryFlag(country) : '';
+
     const header =
       `<div class="wc-header">` +
-        `<div class="wc-name">${esc(current.name)}</div>` +
-        (current.maker ? `<div class="wc-maker">${esc(current.maker)}</div>` : '') +
+        `<div class="wc-name">${esc(cleanName)}</div>` +
+        (winery ? `<div class="wc-maker">${esc(winery)}</div>` : '') +
+        (country ? `<div class="wc-country">${flagHtml}<span>${esc(country)}</span></div>` : '') +
         (current.costbenefit ? `<div class="wc-cb-flag">💰 Custo-benefício</div>` : '') +
       `</div>`;
 
