@@ -1144,7 +1144,7 @@ function formatReply(raw) {
       current.grapes  ? `<div class="wc-line"><span class="wc-line-icon">🍇</span><span class="wc-line-label">Uva</span><span class="wc-line-val">${esc(current.grapes)}</span></div>`         : '',
       current.temp    ? `<div class="wc-line"><span class="wc-line-icon">🌡️</span><span class="wc-line-label">Temperatura</span><span class="wc-line-val">${esc(current.temp)}</span></div>`   : '',
       current.pairing ? `<div class="wc-line"><span class="wc-line-icon">🍽️</span><span class="wc-line-label">Harmoniza</span><span class="wc-line-val">${esc(current.pairing)}</span></div>` : '',
-      current.aromas  ? `<div class="wc-line"><span class="wc-line-icon">🌸</span><span class="wc-line-label">Aromas</span><span class="wc-line-val">${esc(current.aromas)}</span></div>` : '',
+      current.aromas  ? `<div class="wc-line"><span class="wc-line-icon">🌸</span><span class="wc-line-label">Aromas</span><span class="wc-line-val">${esc(current.aromas)}</span></div>`     : '',
     ].filter(Boolean).join('');
 
     const infoBlock = infoLines
@@ -1154,11 +1154,11 @@ function formatReply(raw) {
     // ── CUSTO-BENEFÍCIO (só na 3ª opção) ──
     const cb = ''; // custo-benefício removido do card
 
-    // ── RODAPÉ: motivo + preço lado a lado ──
+    // ── RODAPÉ: motivo + preço ──
     const footer = (current.why || current.priceDisplay)
       ? `<div class="wc-footer">` +
-          (current.why          ? `<div class="wc-why-text">✅ ${esc(current.why)}</div>`            : '') +
-          (current.priceDisplay ? `<div class="wc-price-tag">${esc(current.priceDisplay)}</div>` : '') +
+          (current.why          ? `<div class="wc-why-text">✅ ${esc(current.why)}</div>` : '') +
+          (current.priceDisplay ? `<div class="wc-price-tag wc-line-val">${esc(current.priceDisplay)}</div>` : '') +
         `</div>`
       : '';
 
