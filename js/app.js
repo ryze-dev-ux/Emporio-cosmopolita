@@ -423,7 +423,7 @@ const winesDB = (() => {
       temperature:  get('temperature'),
       tannins:      get('tannins'),
       pairing:      get('pairing'),
-      in_stock:     qty > 0,
+      in_stock:     qty > 0 && costNum > 0.01,
     };
   }
 
