@@ -1158,7 +1158,7 @@ function formatReply(raw) {
     const footer = (current.why || current.priceDisplay)
       ? `<div class="wc-footer">` +
           (current.why          ? `<div class="wc-why-text">✅ ${esc(current.why)}</div>` : '') +
-          (current.priceDisplay ? `<div class="wc-price-tag wc-line-val">${esc(current.priceDisplay)}</div>` : '') +
+          (current.priceDisplay ? `<div class="wc-price-tag">${esc(current.priceDisplay)}</div>` : '') +
         `</div>`
       : '';
 
@@ -1191,7 +1191,9 @@ function formatReply(raw) {
       if (/custo.benef/i.test(line) && /^💰/.test(line)) {
         current.costbenefit = val;
       } else if (/^💵|Preço estimado/i.test(line)) {
-        current.priceDisplay = val;
+        // Garante que o valor começa com R$
+        const pv = val.trim();
+        current.priceDisplay = /^R\$/i.test(pv) ? pv : 'R$ ' + pv;
       } else if (/^💰/.test(line) && !current.costbenefit) {
         const m = line.match(/R\$[^\n,;]*/i);
         current.price = m ? m[0].trim() : val;
