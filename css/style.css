@@ -573,6 +573,21 @@ body::before {
   margin-left: auto;
 }
 
+
+/* Botão Voltar do wizard */
+.wz-back {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color .15s;
+}
+.wz-back:hover { color: var(--ink); }
+
 /* ── Responsivo ─────────────────────────────────────────── */
 @media (max-width: 860px) {
   .shell { grid-template-columns: 1fr; }

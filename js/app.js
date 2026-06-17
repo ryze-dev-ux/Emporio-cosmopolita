@@ -834,7 +834,7 @@ const wizard = { step: 0, answers: { knowledge: '', occasion: '', price: '', cou
 const WIZARD_STEPS = [
   {
     key: 'knowledge',
-    question: 'Você conhece vinhos?',
+    question: 'Quanto você conhece sobre vinhos?',
     options: [
       { emoji: '', label: 'Sou iniciante' },
       { emoji: '', label: 'Conheço um pouco' },
@@ -916,12 +916,17 @@ function renderWizardStep() {
     `</button>`;
   }).join('');
 
+  const backBtn = wizard.step > 0
+    ? `<button class="wz-back" id="wzBack">← Voltar</button>`
+    : '';
+
   thread.innerHTML = `
     <div class="opener" id="opener">
       <img src="logo.png" alt="Empório Cosmopolita" class="opener-logo">
       <p class="opener-eyebrow">— ${stepLabel}</p>
       <h1 class="opener-title">${step.question}</h1>
       <div class="prompt-grid">${cards}</div>
+      ${backBtn}
     </div>`;
 
   // Event listeners após inserir no DOM (evita conflito de aspas)
@@ -932,6 +937,14 @@ function renderWizardStep() {
       wizardSelect(stepIdx, label);
     });
   });
+
+  const backEl = document.getElementById('wzBack');
+  if (backEl) {
+    backEl.addEventListener('click', () => {
+      wizard.step = Math.max(0, wizard.step - 1);
+      renderWizardStep();
+    });
+  }
 }
 
 function wizardSelect(stepIdx, label) {
