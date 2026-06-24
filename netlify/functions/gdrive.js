@@ -75,9 +75,20 @@ function driveGet(path, token) {
   });
 }
 
-/* ── Download de arquivo binário ────────────────────────── */
+/* ── Download de arquivo ────────────────────────────────── */
 async function downloadFile(id, token) {
-  return driveGet(`/drive/v3/files/${id}?alt=media`, token);
+  // Tenta download direto (arquivo xlsx/binário no Drive)
+  try {
+    const buf = await driveGet(`/drive/v3/files/${id}?alt=media`, token);
+    // Verifica se é xlsx (PK header) ou Google Sheets (HTML/JSON redirect)
+    if (buf[0] === 0x50 && buf[1] === 0x4B) return buf; // PK = ZIP = xlsx válido
+  } catch {}
+
+  // Fallback: exporta Google Sheets como xlsx
+  return driveGet(
+    `/drive/v3/files/${id}/export?mimeType=application%2Fvnd.openxmlformats-officedocument.spreadsheetml.sheet`,
+    token
+  );
 }
 
 /* ── Lista arquivos de uma pasta ────────────────────────── */
