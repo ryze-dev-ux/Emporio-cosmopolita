@@ -114,8 +114,10 @@ function parseXlsx(buf) {
   const XLSX = require('xlsx');
   const wb   = XLSX.read(buf, { type:'buffer' });
 
+  // Aceita qualquer aba que tenha dados de vinho
   const sheetName = wb.SheetNames.find(n => /somente/i.test(n))
     || wb.SheetNames.find(n => /vinho|espumante/i.test(n))
+    || wb.SheetNames.find(n => /sheet|planilha/i.test(n))
     || wb.SheetNames[0];
 
   const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header:1, defval:null });
@@ -172,8 +174,7 @@ function parseXlsx(buf) {
     if (!rawName) continue;
 
     const name = titleCase(rawName.replace(/\s*[-–]\s*\d+\s*(ml|l|lt)\s*$/i,'').trim());
-    const type = get(row,'type');
-    if (!type) continue;
+    const type = get(row,'type') || '';
 
     const hasQty = map['qty'] !== undefined;
     const qty    = parseNum(get(row,'qty','0'));
