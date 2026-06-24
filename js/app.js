@@ -7,6 +7,7 @@
 
 const API_ENDPOINT  = '/api/chat';
 const API_WINES_DB  = '/api/wines-db';
+const API_GDRIVE    = '/api/gdrive';
 const API_AUTH      = '/api/auth';
 const HISTORY_TURNS = 12;
 
@@ -37,7 +38,7 @@ Profissional experiente. Sem nome. Sem IA. Fale diretamente, com elegância. Sem
 💵 Preço: [copie exatamente o CUSTO_MEDIO do acervo — não calcule, não invente]
 ✅ [motivo em 1 frase direta conectando o vinho ao pedido do cliente]
 
-`;
+Finalize com uma linha começando com 💡 — dica de serviço ou curiosidade. Uma frase.`;
 
 /* ═══════════════════════════════════════════════════════════
    MÓDULO auth
@@ -283,11 +284,11 @@ const winesDB = (() => {
     qty:         ['qtd atual','quantidade','qty','estoque','stock','qtd','saldo'],
     cost:        ['custo medio','custo médio','preco','preço','price','custo'],
     country:     ['pais de origem','país de origem','pais','país','country'],
-    winery:      ['vinícola','vinicola','produtor','winery','producer'],
     grapes:      ['uva / casta','uva/casta','uva','casta','grape','uvas','varietal'],
     type:        ['tipo','type','categoria','estilo'],
     temperature: ['temperatura de servico','temperatura de serviço','temperatura','temp'],
     tannins:     ['taninos','tannins'],
+    winery:      ['vinícola','vinicola','produtor','winery','producer'],
     pairing:     ['harmonizacao','harmonização','harmoniza','pairing'],
   };
 
@@ -405,25 +406,21 @@ const winesDB = (() => {
 
     const type = get('type');
 
-    // Vinícola: prefere coluna dedicada, fallback para extração do nome
-    const winery = get('winery') || producer;
-
     return {
       id:           'r' + idx,
       name,
-      producer:     winery,   // vinícola da coluna ou extraída
+      producer,
       qty,
       cost_display: costRaw,
       cost_value:   costNum,
       country:      get('country'),
-      winery,
       grapes:       get('grapes'),
       type,
       color:        _detectColor(type),
       temperature:  get('temperature'),
       tannins:      get('tannins'),
       pairing:      get('pairing'),
-      in_stock:     qty > 0 && costNum > 0.01,
+      in_stock:     qty > 0,
     };
   }
 
@@ -554,7 +551,20 @@ const winesDB = (() => {
   }
 
   async function fetchCatalog() {
-    // 1. Tenta servidor (Blobs ou /tmp)
+    // 1. Google Drive (fonte primária)
+    try {
+      const res = await fetch(API_GDRIVE + '?action=catalog');
+      if (res.ok) {
+        const d = await res.json();
+        if (d.wines && d.wines.length) {
+          _catalog = { wines: d.wines, meta: d.meta };
+          _persist();
+          return true;
+        }
+      }
+    } catch (e) { console.warn('[catalog] Drive:', e.message); }
+
+    // 2. Fallback: servidor (Blobs)
     try {
       const res = await fetch(API_WINES_DB);
       if (res.ok) {
@@ -567,8 +577,19 @@ const winesDB = (() => {
       }
     } catch {}
 
-    // 2. Fallback: localStorage
+    // 3. Fallback: localStorage
     return _loadLocal();
+  }
+
+  async function fetchImageMap() {
+    try {
+      const res = await fetch(API_GDRIVE + '?action=images');
+      if (res.ok) {
+        const d = await res.json();
+        return d.images || {};
+      }
+    } catch {}
+    return {};
   }
 
   return {
@@ -824,193 +845,373 @@ function renderThreadList() {
   });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   WIZARD DE 4 ETAPAS
-   ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════
+   MÓDULO: searchWizard — Pesquisa guiada de vinhos por filtros (v2)
+   ═══════════════════════════════════════════════════════════════════════ */
 
-// Estado do wizard
-const wizard = { step: 0, answers: { knowledge: '', occasion: '', price: '', country: '' } };
+const searchWizard = (() => {
 
-const WIZARD_STEPS = [
-  {
-    key: 'knowledge',
-    question: 'Quanto você conhece sobre vinhos?',
-    options: [
-      { emoji: '', label: 'Sou iniciante' },
-      { emoji: '', label: 'Conheço um pouco' },
-      { emoji: '', label: 'Entendo de vinhos' },
-      { emoji: '', label: 'Apenas me recomende algo bom' },
-    ],
-  },
-  {
-    key: 'occasion',
-    question: 'Para qual ocasião você procura o vinho?',
-    options: [
-      { emoji: '', label: 'Jantar ou momento a dois' },
-      { emoji: '', label: 'Refeição (almoço ou jantar)' },
-      { emoji: '', label: 'Festa, encontro ou comemoração' },
-      { emoji: '', label: 'Presente' },
-      { emoji: '', label: 'Relaxar e apreciar' },
-    ],
-  },
-  {
-    key: 'pairing',
-    question: 'Com qual prato você deseja harmonizar o vinho?',
-    options: [
-      { emoji: '', label: 'Carnes vermelhas' },
-      { emoji: '', label: 'Peixes e frutos do mar' },
-      { emoji: '', label: 'Massas' },
-      { emoji: '', label: 'Queijos e frios' },
-      { emoji: '', label: 'Não vou harmonizar com comida' },
-    ],
-  },
-  {
-    key: 'price',
-    question: 'Qual faixa de preço você procura?',
-    options: [
-      { emoji: '', label: 'Até R$ 70',        max: 70 },
-      { emoji: '', label: 'R$ 71 a R$ 150',   min: 71,  max: 150 },
-      { emoji: '', label: 'R$ 151 a R$ 300',  min: 151, max: 300 },
-      { emoji: '', label: 'Acima de R$ 300',  min: 301 },
-    ],
-  },
-  {
-    key: 'country',
-    question: 'Tem preferência por país?',
-    options: [
-      { emoji: 'br', label: 'Brasil',           flag: true },
-      { emoji: 'cl', label: 'Chile',            flag: true },
-      { emoji: 'ar', label: 'Argentina',        flag: true },
-      { emoji: 'pt', label: 'Portugal',         flag: true },
-      { emoji: 'fr', label: 'França',           flag: true },
-      { emoji: 'it', label: 'Itália',           flag: true },
-      { emoji: 'es', label: 'Espanha',          flag: true },
-      { emoji: 'uy', label: 'Uruguai',          flag: true },
-      { emoji: '',   label: 'Sem preferência',  flag: false },
-    ],
-  },
-];
+  /* ── Etapas ────────────────────────────────────────────────────────── */
+  const STEPS = [
+    {
+      key: 'price', label: 'Faixa de Preço', icon: '💰',
+      options: [
+        { label: 'Até R$ 80',        min: 0,   max: 80        },
+        { label: 'R$ 80 a R$ 130',   min: 80,  max: 130       },
+        { label: 'R$ 130 a R$ 200',  min: 130, max: 200       },
+        { label: 'R$ 200 a R$ 250',  min: 200, max: 250       },
+        { label: 'R$ 250 a R$ 300',  min: 250, max: 300       },
+        { label: 'Acima de R$ 300',  min: 300, max: Infinity  },
+      ],
+    },
+    {
+      key: 'tipo', label: 'Tipo de Vinho', icon: '🍷',
+      options: [
+        { label: 'Vinho Tinto'  },
+        { label: 'Vinho Branco' },
+        { label: 'Espumante'    },
+      ],
+    },
+    {
+      key: 'estilo', label: 'Estilo', icon: '✨',
+      options: [
+        { label: 'Suave'    },
+        { label: 'Meio Seco'},
+        { label: 'Seco'     },
+      ],
+    },
+    {
+      key: 'uva', label: 'Tipo de Uva', icon: '🍇',
+      options: [
+        { label: 'Blend de Uvas'      },
+        { label: 'Cabernet Sauvignon' },
+        { label: 'Malbec'             },
+        { label: 'Carmenere'          },
+        { label: 'Merlot'             },
+        { label: 'Shiraz / Syrah'     },
+        { label: 'Tannat'             },
+        { label: 'Viognier'           },
+        { label: 'Sangiovese'         },
+        { label: 'Sauvignon Blanc'    },
+        { label: 'Gewürztraminer'     },
+        { label: 'Chardonnay'         },
+        { label: 'Savagnin Blanc'     },
+        { label: 'Cabernet Franc'     },
+        { label: 'Petit Verdot'       },
+        { label: 'Pinotage'           },
+        { label: 'Pinot Noir'         },
+        { label: 'Pinot Grigio'       },
+      ],
+    },
+    {
+      key: 'pais', label: 'País de Origem', icon: '🌍',
+      options: [
+        { label: 'Sem preferência', any: true },
+        { label: 'Argentina',    flag: 'ar' },
+        { label: 'Chile',        flag: 'cl' },
+        { label: 'Brasil',       flag: 'br' },
+        { label: 'França',       flag: 'fr' },
+        { label: 'Itália',       flag: 'it' },
+        { label: 'Portugal',     flag: 'pt' },
+        { label: 'Espanha',      flag: 'es' },
+        { label: 'Uruguai',      flag: 'uy' },
+        { label: 'África do Sul',flag: 'za' },
+        { label: 'Austrália',    flag: 'au' },
+        { label: 'Estados Unidos',flag:'us' },
+      ],
+    },
+    {
+      key: 'harmonizacao', label: 'Harmonização', icon: '🍽️',
+      options: [
+        { label: 'Carnes Vermelhas'      },
+        { label: 'Carnes Brancas'        },
+        { label: 'Massas e Risotos'      },
+        { label: 'Queijos e Frios'       },
+        { label: 'Peixes e Frutos do Mar'},
+        { label: 'Sem preferência', any: true },
+      ],
+    },
+  ];
 
+  /* ── Estado ────────────────────────────────────────────────────────── */
+  let st = { step: 0, answers: {} };
+
+  /* ── Utilitários ───────────────────────────────────────────────────── */
+  function norm(s) {
+    return String(s || '').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function fmtPrice(w) {
+    const raw = w.cost_display || '';
+    const num = w.cost_value   || 0;
+    if (raw && raw !== 'R$ 0,00') return raw;
+    if (num > 0) return 'R$ ' + num.toFixed(2).replace('.', ',');
+    return '—';
+  }
+
+  function flagImg(cc, label) {
+    if (!cc) return '';
+    return `<img src="https://flagcdn.com/16x12/${cc}.png" width="16" height="12" alt="${label}" class="wc-flag">`;
+  }
+
+  const COUNTRY_CC = {
+    'argentina':'ar','chile':'cl','brasil':'br','franca':'fr',
+    'italia':'it','portugal':'pt','espanha':'es','uruguai':'uy',
+    'africa do sul':'za','australia':'au','estados unidos':'us',
+  };
+
+  /* ── Filtros ───────────────────────────────────────────────────────── */
+  function applyFilters(wines, ans, relaxed) {
+    return wines.filter(w => {
+      // Preço
+      const pr = ans.price;
+      if (pr) {
+        const cv = w.cost_value || 0;
+        if (cv < pr.min || cv > pr.max) return false;
+      }
+      // Tipo
+      if (ans.tipo) {
+        const wt = norm(w.type || '');
+        const lt = norm(ans.tipo);
+        // "vinho tinto" → busca "tinto", "vinho branco" → "branco", "espumante" → "espumante"
+        const keyword = lt.replace('vinho ', '');
+        if (!wt.includes(keyword)) return false;
+      }
+      // Estilo — busca no tipo e nome
+      if (ans.estilo) {
+        const haystack = norm((w.type || '') + ' ' + (w.name || ''));
+        if (!haystack.includes(norm(ans.estilo))) return false;
+      }
+      // Uva
+      if (ans.uva && norm(ans.uva) !== 'blend de uvas') {
+        const wg = norm(w.grapes || '');
+        // Normaliza shiraz/syrah
+        const terms = norm(ans.uva).replace('shiraz  syrah','syrah shiraz').split(' ').filter(t => t.length > 2);
+        if (!terms.some(t => wg.includes(t))) return false;
+      }
+      // País (ignorado se relaxado)
+      if (!relaxed && ans.pais && !STEPS[4].options.find(o => o.label === ans.pais)?.any) {
+        if (norm(w.country || '') !== norm(ans.pais)) return false;
+      }
+      // Harmonização (ignorada se relaxado)
+      if (!relaxed && ans.harmonizacao && !STEPS[5].options.find(o => o.label === ans.harmonizacao)?.any) {
+        const wp = norm(w.pairing || '');
+        const hterms = norm(ans.harmonizacao).split(' e ').flatMap(t => t.split(' ')).filter(t => t.length > 3);
+        if (!hterms.some(t => wp.includes(t))) return false;
+      }
+      return true;
+    });
+  }
+
+  /* ── Card de resultado ─────────────────────────────────────────────── */
+  function renderCard(w) {
+    let imgUrl = null;
+    try { imgUrl = wineImageUrl(w.name); } catch {}
+
+    const imgHtml = imgUrl
+      ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="sw-card-img" loading="lazy" onerror="this.parentElement.innerHTML='<div class=sw-no-img>🍷</div>'">`
+      : `<div class="sw-no-img">🍷</div>`;
+
+    const cc      = COUNTRY_CC[norm(w.country || '')];
+    const flagHtml = flagImg(cc, w.country || '');
+
+    return `
+      <div class="sw-card">
+        <div class="sw-card-visual">${imgHtml}</div>
+        <div class="sw-card-body">
+          <div class="sw-card-name">${esc(w.name)}</div>
+          ${w.winery || w.producer ? `<div class="sw-card-winery">${esc(w.winery || w.producer)}</div>` : ''}
+          <div class="sw-card-meta">
+            ${flagHtml}<span>${esc(w.country || '')}</span>
+            ${w.grapes ? `<span class="sw-sep">·</span><span>${esc(w.grapes)}</span>` : ''}
+            ${w.type   ? `<span class="sw-sep">·</span><span>${esc(w.type)}</span>`   : ''}
+          </div>
+          ${w.pairing ? `<div class="sw-card-pairing">🍽️ ${esc(w.pairing)}</div>` : ''}
+          <div class="sw-card-price">${fmtPrice(w)}</div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Resumo de filtros ─────────────────────────────────────────────── */
+  function renderSummary() {
+    const tags = [];
+    if (st.answers.price)        tags.push(st.answers.price.label);
+    if (st.answers.tipo)         tags.push(st.answers.tipo);
+    if (st.answers.estilo)       tags.push(st.answers.estilo);
+    if (st.answers.uva)          tags.push(st.answers.uva);
+    if (st.answers.pais && !STEPS[4].options.find(o => o.label === st.answers.pais)?.any)
+      tags.push(st.answers.pais);
+    if (st.answers.harmonizacao && !STEPS[5].options.find(o => o.label === st.answers.harmonizacao)?.any)
+      tags.push(st.answers.harmonizacao);
+    if (!tags.length) return '';
+    return `<div class="sw-summary">${tags.map(t => `<span class="sw-tag">${esc(t)}</span>`).join('')}</div>`;
+  }
+
+  /* ── Ordenação ─────────────────────────────────────────────────────── */
+  function sortWines(wines, order) {
+    const sorted = [...wines];
+    if (order === 'cb')   return sorted.sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
+    if (order === 'med')  return sorted.sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
+    if (order === 'caro') return sorted.sort((a, b) => (b.cost_value || 0) - (a.cost_value || 0));
+    return sorted;
+  }
+
+  /* ── Resultados ────────────────────────────────────────────────────── */
+  function renderResults(wines, relaxed) {
+    const thread = document.getElementById('thread');
+
+    if (!wines.length) {
+      thread.innerHTML = `
+        <div class="sw-wrap">
+          ${renderSummary()}
+          <div class="sw-empty">
+            <div class="sw-empty-icon">🍷</div>
+            <p>Não encontramos vinhos com todos os critérios selecionados.</p>
+            <p>Deseja ampliar a busca?</p>
+            <div class="sw-empty-actions">
+              <button class="sw-btn-gold" id="swRelax">Ampliar busca</button>
+              <button class="sw-btn-ghost" id="swRestart">Nova pesquisa</button>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('swRelax').addEventListener('click', () => {
+        const all = winesDB.getCatalog()?.wines || [];
+        renderResults(applyFilters(all, st.answers, true), true);
+      });
+      document.getElementById('swRestart').addEventListener('click', start);
+      return;
+    }
+
+    let currentOrder = 'cb';
+    let currentWines = sortWines(wines, currentOrder);
+
+    function rebuildCards() {
+      const container = document.getElementById('swCards');
+      if (container) container.innerHTML = sortWines(wines, currentOrder).map(renderCard).join('');
+    }
+
+    const relaxNote = relaxed
+      ? `<p class="sw-relax-note">Mostrando resultados sem filtros de país e harmonização.</p>` : '';
+
+    thread.innerHTML = `
+      <div class="sw-wrap">
+        ${renderSummary()}
+        ${relaxNote}
+        <div class="sw-results-header">
+          <span class="sw-count">${wines.length} vinho${wines.length !== 1 ? 's' : ''} encontrado${wines.length !== 1 ? 's' : ''}</span>
+          <div class="sw-sort">
+            <button class="sw-sort-btn active" data-order="cb">Custo-benefício</button>
+            <button class="sw-sort-btn" data-order="med">Preço médio</button>
+            <button class="sw-sort-btn" data-order="caro">Mais caro</button>
+          </div>
+        </div>
+        <div class="sw-cards" id="swCards">${currentWines.map(renderCard).join('')}</div>
+        <div class="sw-results-footer">
+          <button class="sw-btn-ghost" id="swRestart">↺ Nova pesquisa</button>
+        </div>
+      </div>`;
+
+    // Ordenação
+    thread.querySelectorAll('.sw-sort-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentOrder = btn.dataset.order;
+        thread.querySelectorAll('.sw-sort-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        rebuildCards();
+      });
+    });
+
+    document.getElementById('swRestart').addEventListener('click', start);
+  }
+
+  /* ── Renderiza etapa ───────────────────────────────────────────────── */
+  function renderStep() {
+    const thread = document.getElementById('thread');
+    const step   = STEPS[st.step];
+    if (!step) { finish(); return; }
+
+    const pct = Math.round((st.step / STEPS.length) * 100);
+
+    const cards = step.options.map(opt => {
+      const iconHtml = opt.flag
+        ? `<img src="https://flagcdn.com/24x18/${opt.flag}.png" srcset="https://flagcdn.com/48x36/${opt.flag}.png 2x" width="24" height="18" class="wz-flag" alt="${opt.label}">`
+        : '';
+      // Marca a opção já selecionada
+      const currentAns = st.answers[step.key];
+      const isSelected = currentAns && (
+        (step.key === 'price' ? currentAns.label === opt.label : currentAns === opt.label)
+      );
+      return `<button class="prompt-card wz-option${isSelected ? ' sw-selected' : ''}" data-label="${esc(opt.label)}">
+        ${iconHtml}
+        <span class="prompt-text wz-opt-label">${esc(opt.label)}</span>
+      </button>`;
+    }).join('');
+
+    const backBtn = st.step > 0
+      ? `<button class="wz-back" id="swBack">← Voltar</button>` : '';
+
+    thread.innerHTML = `
+      <div class="opener" id="opener">
+        <img src="logo.png" alt="Empório Cosmopolita" class="opener-logo">
+        <p class="opener-eyebrow">— Pesquisa de Vinhos</p>
+        <div class="sw-progress-wrap">
+          <div class="sw-progress"><div class="sw-progress-bar" style="width:${pct}%"></div></div>
+          <span class="sw-step-label">Etapa ${st.step + 1} de ${STEPS.length} — ${step.icon} ${step.label}</span>
+        </div>
+        ${renderSummary()}
+        <h1 class="opener-title">${step.question || step.label}</h1>
+        <div class="prompt-grid">${cards}</div>
+        ${backBtn}
+      </div>`;
+
+    // Listeners dos cards
+    thread.querySelectorAll('.wz-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const label = btn.querySelector('.wz-opt-label').textContent.trim();
+        const opt   = step.options.find(o => o.label === label);
+        if (step.key === 'price') st.answers.price = opt;
+        else st.answers[step.key] = label;
+
+        st.step++;
+        if (st.step >= STEPS.length) finish();
+        else renderStep();
+      });
+    });
+
+    // Voltar
+    document.getElementById('swBack')?.addEventListener('click', () => {
+      st.step = Math.max(0, st.step - 1);
+      renderStep();
+    });
+  }
+
+  /* ── Finaliza e filtra ─────────────────────────────────────────────── */
+  function finish() {
+    const wines    = winesDB.getCatalog()?.wines || [];
+    const filtered = applyFilters(wines, st.answers, false);
+    renderResults(filtered, false);
+  }
+
+  /* ── Inicia ────────────────────────────────────────────────────────── */
+  function start() {
+    st = { step: 0, answers: {} };
+    renderStep();
+  }
+
+  return { start, isActive: () => st.step > 0 };
+})();
+
+window.searchWizard = searchWizard;
+
+
+/* ── Opener ─────────────────────────────────────────────── */
 function renderOpener() {
-  wizard.step = 0;
-  wizard.answers = { knowledge: '', occasion: '', pairing: '', price: '', country: '' };
-  renderWizardStep();
-}
-
-function renderWizardStep() {
-  const thread = document.getElementById('thread');
-  const step   = WIZARD_STEPS[wizard.step];
-  if (!step) return;
-
-  // Progresso como eyebrow discreta — mesma classe do original
-  const stepLabel = `Etapa ${wizard.step + 1} de ${WIZARD_STEPS.length}`;
-
-  // Cards de opção — usa exatamente .prompt-card do design original
-  const cards = step.options.map(opt => {
-    const icon = opt.flag
-      ? `<img src="https://flagcdn.com/24x18/${opt.emoji}.png" srcset="https://flagcdn.com/48x36/${opt.emoji}.png 2x" width="24" height="18" alt="${opt.label}" class="wz-flag">`
-      : `<span class="prompt-eyebrow">${opt.emoji}</span>`;
-    return `<button class="prompt-card wz-option" data-step="${wizard.step}">` +
-      icon +
-      `<span class="prompt-text wz-opt-label">${opt.label}</span>` +
-    `</button>`;
-  }).join('');
-
-  const backBtn = wizard.step > 0
-    ? `<button class="wz-back" id="wzBack">← Voltar</button>`
-    : '';
-
-  thread.innerHTML = `
-    <div class="opener" id="opener">
-      <img src="logo.png" alt="Empório Cosmopolita" class="opener-logo">
-      <p class="opener-eyebrow">— ${stepLabel}</p>
-      <h1 class="opener-title">${step.question}</h1>
-      <div class="prompt-grid">${cards}</div>
-      ${backBtn}
-    </div>`;
-
-  // Event listeners após inserir no DOM (evita conflito de aspas)
-  thread.querySelectorAll('.wz-option').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const stepIdx = parseInt(btn.dataset.step, 10);
-      const label   = btn.querySelector('.wz-opt-label').textContent.trim();
-      wizardSelect(stepIdx, label);
-    });
-  });
-
-  const backEl = document.getElementById('wzBack');
-  if (backEl) {
-    backEl.addEventListener('click', () => {
-      wizard.step = Math.max(0, wizard.step - 1);
-      renderWizardStep();
-    });
-  }
-}
-
-function wizardSelect(stepIdx, label) {
-  const step = WIZARD_STEPS[stepIdx];
-  if (!step) return;
-  wizard.answers[step.key] = label;
-  wizard.step = stepIdx + 1;
-
-  if (wizard.step >= WIZARD_STEPS.length) {
-    wizardFinish();
-  } else {
-    renderWizardStep();
-  }
-}
-
-function wizardFinish() {
-  const { knowledge, occasion, pairing, price, country } = wizard.answers;
-
-  // Monta texto da mensagem com base nas respostas
-  const knowledgeMap = {
-    'Sou iniciante':                  'Sou iniciante em vinhos, prefiro algo fácil de apreciar e sem muita complexidade.',
-    'Conheço um pouco':               'Conheço um pouco de vinhos e já experimentei alguns rótulos.',
-    'Entendo de vinhos':              'Entendo bem de vinhos e aprecio rótulos com mais complexidade e caráter.',
-    'Apenas me recomende algo bom':   'Não sei muito de vinhos, só quero uma boa recomendação.',
-  };
-
-  const occasionMap = {
-    'Jantar ou momento a dois':       'para um jantar romântico a dois',
-    'Refeição (almoço ou jantar)':    'para acompanhar uma refeição',
-    'Festa, encontro ou comemoração': 'para uma festa ou comemoração',
-    'Presente':                       'para presentear alguém especial',
-    'Relaxar e apreciar':             'para relaxar e apreciar tranquilamente',
-  };
-
-  const priceMap = {
-    'Até R$ 70':       'com preço até R$ 70',
-    'R$ 71 a R$ 150':  'com preço entre R$ 71 e R$ 150',
-    'R$ 151 a R$ 300': 'com preço entre R$ 151 e R$ 300',
-    'Acima de R$ 300': 'com preço acima de R$ 300',
-  };
-
-  const countryPart = country && country !== 'Sem preferência'
-    ? `, preferencialmente de ${country}`
-    : '';
-
-  const pairingPart = pairing && pairing !== 'Não vou harmonizar com comida'
-    ? `, harmonizando com ${pairing.toLowerCase()}`
-    : '';
-
-  const knowledgePart = knowledgeMap[knowledge] || knowledge;
-  const occasionPart  = occasionMap[occasion]   || `para ${occasion}`;
-  const pricePart     = priceMap[price]         || price;
-
-  const query = `${knowledgePart}. Estou buscando um vinho ${occasionPart}${pairingPart}, ${pricePart}${countryPart}. Por favor, recomende 3 opções do acervo e mencione brevemente a compatibilidade com o prato quando aplicável.`;
-
-  // Remove opener e envia como mensagem do usuário
-  const op = document.getElementById('opener');
-  if (op) op.remove();
-
-  document.getElementById('msgInput').value = query;
-  sendMessage();
+  searchWizard.start();
 }
 
 function useSugg(el) {
-  const op = document.getElementById('opener');
-  if (op) op.remove();
   document.getElementById('msgInput').value = el.querySelector('.prompt-text').textContent.trim();
   sendMessage();
 }
@@ -1063,16 +1264,8 @@ async function sendMessage() {
 
 async function callApi() {
   const recent  = state.history.slice(-HISTORY_TURNS * 2);
+  // Envia o catálogo junto — garante que o servidor sempre tem os vinhos
   const catalog = winesDB.getCatalog();
-  let wines = catalog ? catalog.wines : [];
-
-  // Filtra por país se o wizard tiver selecionado um
-  const selectedCountry = wizard.answers.country;
-  if (selectedCountry && selectedCountry !== 'Sem preferência') {
-    const filtered = wines.filter(w => w.country === selectedCountry);
-    if (filtered.length >= 3) wines = filtered; // só aplica se houver vinhos suficientes
-  }
-
   const res = await fetch(API_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1080,7 +1273,7 @@ async function callApi() {
       system:    SYSTEM_PROMPT,
       messages:  recent,
       max_tokens: 1400,
-      wines,
+      wines:     catalog ? catalog.wines : [],
     }),
   });
   if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
@@ -1104,28 +1297,21 @@ function appendMessage(role, content, { instant = false } = {}) {
 
 /* ── Parser → cards ─────────────────────────────────────── */
 
-/* ── Mapa de bandeiras por país ─────────────────────────────────────────── */
-const COUNTRY_FLAGS = {
-  'Argentina':      'ar',
-  'Austrália':      'au',
-  'Brasil':         'br',
-  'Chile':          'cl',
-  'Espanha':        'es',
-  'Estados Unidos': 'us',
-  'França':         'fr',
-  'Israel':         'il',
-  'Itália':         'it',
-  'Líbano':         'lb',
-  'Portugal':       'pt',
-  'Uruguai':        'uy',
-  'África do Sul':  'za',
-};
-
-function countryFlag(country) {
-  const cc = COUNTRY_FLAGS[country];
-  if (!cc) return '';
-  return `<img src="https://flagcdn.com/16x12/${cc}.png" srcset="https://flagcdn.com/32x24/${cc}.png 2x" width="16" height="12" alt="${country}" class="wc-flag">`;
+/* ── Imagem do vinho via Drive ──────────────────────────── */
+function normWineName(name) {
+  return String(name).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
 }
+function wineImageUrl(name) {
+  const map = window._driveImages || {};
+  const key = normWineName(name);
+  if (map[key]) return map[key];
+  // Busca parcial (primeiros 25 chars)
+  const k2 = Object.keys(map).find(k => k.startsWith(key.slice(0,25)));
+  return k2 ? map[k2] : null;
+}
+
 function formatReply(raw) {
   const lines = raw.split('\n');
   let html = '', cards = [], current = null, tip = '';
@@ -1133,21 +1319,11 @@ function formatReply(raw) {
   const flush = () => {
     if (!current) return;
 
-    // ── HEADER: Nome (negrito) → Vinícola (menor) → País com bandeira ──
-    const cleanName = current.name.replace(/[\[\]]/g, '').trim();
-
-    // País vem do catálogo importado (buscamos pelo nome do vinho)
-    const _cat    = winesDB.getCatalog();
-    const wineObj = (_cat?.wines || []).find(w => w.name === cleanName || w.name === current.name);
-    const country = wineObj?.country || '';
-    const winery  = wineObj?.winery  || wineObj?.producer || current.maker || '';
-    const flagHtml = country ? countryFlag(country) : '';
-
+    // ── HEADER ──
     const header =
       `<div class="wc-header">` +
-        `<div class="wc-name">${esc(cleanName)}</div>` +
-        (winery ? `<div class="wc-maker">${esc(winery)}</div>` : '') +
-        (country ? `<div class="wc-country">${flagHtml}<span>${esc(country)}</span></div>` : '') +
+        `<div class="wc-name">${esc(current.name)}</div>` +
+        (current.maker ? `<div class="wc-maker">${esc(current.maker)}</div>` : '') +
         (current.costbenefit ? `<div class="wc-cb-flag">💰 Custo-benefício</div>` : '') +
       `</div>`;
 
@@ -1157,7 +1333,7 @@ function formatReply(raw) {
       current.grapes  ? `<div class="wc-line"><span class="wc-line-icon">🍇</span><span class="wc-line-label">Uva</span><span class="wc-line-val">${esc(current.grapes)}</span></div>`         : '',
       current.temp    ? `<div class="wc-line"><span class="wc-line-icon">🌡️</span><span class="wc-line-label">Temperatura</span><span class="wc-line-val">${esc(current.temp)}</span></div>`   : '',
       current.pairing ? `<div class="wc-line"><span class="wc-line-icon">🍽️</span><span class="wc-line-label">Harmoniza</span><span class="wc-line-val">${esc(current.pairing)}</span></div>` : '',
-      current.aromas  ? `<div class="wc-line"><span class="wc-line-icon">🌸</span><span class="wc-line-label">Aromas</span><span class="wc-line-val">${esc(current.aromas)}</span></div>`     : '',
+      current.aromas  ? `<div class="wc-line"><span class="wc-line-icon">🌸</span><span class="wc-line-label">Aromas</span><span class="wc-line-val wc-italic">${esc(current.aromas)}</span></div>` : '',
     ].filter(Boolean).join('');
 
     const infoBlock = infoLines
@@ -1165,12 +1341,14 @@ function formatReply(raw) {
       : '';
 
     // ── CUSTO-BENEFÍCIO (só na 3ª opção) ──
-    const cb = ''; // custo-benefício removido do card
+    const cb = current.costbenefit
+      ? `<div class="wc-cb-row">💡 ${esc(current.costbenefit)}</div>`
+      : '';
 
-    // ── RODAPÉ: motivo + preço ──
+    // ── RODAPÉ: motivo + preço lado a lado ──
     const footer = (current.why || current.priceDisplay)
       ? `<div class="wc-footer">` +
-          (current.why          ? `<div class="wc-why-text">✅ ${esc(current.why)}</div>` : '') +
+          (current.why          ? `<div class="wc-why-text">✅ ${esc(current.why)}</div>`            : '') +
           (current.priceDisplay ? `<div class="wc-price-tag">${esc(current.priceDisplay)}</div>` : '') +
         `</div>`
       : '';
@@ -1204,12 +1382,7 @@ function formatReply(raw) {
       if (/custo.benef/i.test(line) && /^💰/.test(line)) {
         current.costbenefit = val;
       } else if (/^💵|Preço estimado/i.test(line)) {
-        // Garante R$ e centavos (ex: "249" → "R$ 249,00", "R$ 100" → "R$ 100,00")
-        const pv  = val.trim().replace(/^R\$\s*/i, '');
-        const num = parseFloat(pv.replace(/\./g, '').replace(',', '.'));
-        current.priceDisplay = !isNaN(num)
-          ? 'R$ ' + num.toFixed(2).replace('.', ',')
-          : 'R$ ' + pv;
+        current.priceDisplay = val;
       } else if (/^💰/.test(line) && !current.costbenefit) {
         const m = line.match(/R\$[^\n,;]*/i);
         current.price = m ? m[0].trim() : val;
@@ -1238,7 +1411,7 @@ function formatReply(raw) {
 
   flush();
   if (cards.length) html += `<div class="wines">${cards.map(c => `<div class="wine">${c}</div>`).join('')}</div>`;
-  // tip-bar (💡) removido
+  if (tip) html += `<div class="tip-bar">${esc(tip)}</div>`;
   return html;
 }
 
