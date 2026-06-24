@@ -1263,17 +1263,24 @@ async function sendMessage() {
 }
 
 async function callApi() {
-  const recent  = state.history.slice(-HISTORY_TURNS * 2);
-  // Envia o catálogo junto — garante que o servidor sempre tem os vinhos
-  const catalog = winesDB.getCatalog();
+  const recent = state.history.slice(-HISTORY_TURNS * 2);
+
+  // Se catálogo ainda não carregou, tenta buscar agora (máx 8s)
+  let catalog = winesDB.getCatalog();
+  if (!catalog || !catalog.wines || !catalog.wines.length) {
+    try { await winesDB.fetchCatalog(); catalog = winesDB.getCatalog(); } catch {}
+  }
+
+  const wines = catalog?.wines || [];
+
   const res = await fetch(API_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      system:    SYSTEM_PROMPT,
-      messages:  recent,
+      system:     SYSTEM_PROMPT,
+      messages:   recent,
       max_tokens: 1400,
-      wines:     catalog ? catalog.wines : [],
+      wines,
     }),
   });
   if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
