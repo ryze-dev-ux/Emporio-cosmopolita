@@ -944,9 +944,7 @@ const searchWizard = (() => {
   }
 
   function fmtPrice(w) {
-    const raw = w.cost_display || '';
-    const num = w.cost_value   || 0;
-    if (raw && raw !== 'R$ 0,00') return raw;
+    const num = w.cost_value || 0;
     if (num > 0) return 'R$ ' + num.toFixed(2).replace('.', ',');
     return '—';
   }
@@ -1010,25 +1008,33 @@ const searchWizard = (() => {
     try { imgUrl = wineImageUrl(w.name); } catch {}
 
     const imgHtml = imgUrl
-      ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="sw-card-img" loading="lazy" onerror="this.parentElement.innerHTML='<div class=sw-no-img>🍷</div>'">`
-      : `<div class="sw-no-img">🍷</div>`;
+      ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="wc-bottle-img" loading="lazy" onerror="this.style.display='none'">`
+      : '';
 
-    const cc      = COUNTRY_CC[norm(w.country || '')];
-    const flagHtml = flagImg(cc, w.country || '');
+    const cc       = COUNTRY_CC[norm(w.country || '')];
+    const flagHtml = cc ? `<img src="https://flagcdn.com/16x12/${cc}.png" width="16" height="12" alt="${esc(w.country)}" class="wc-flag">` : '';
+    const preco    = fmtPrice(w);
+
+    const infoLines = [
+      w.type    ? `<div class="wc-line"><span class="wc-line-icon">🍷</span><span class="wc-line-label">Tipo</span><span class="wc-line-val">${esc(w.type)}</span></div>` : '',
+      w.grapes  ? `<div class="wc-line"><span class="wc-line-icon">🍇</span><span class="wc-line-label">Uva</span><span class="wc-line-val">${esc(w.grapes)}</span></div>` : '',
+      w.temperature ? `<div class="wc-line"><span class="wc-line-icon">🌡️</span><span class="wc-line-label">Temperatura</span><span class="wc-line-val">${esc(w.temperature)}</span></div>` : '',
+      w.pairing ? `<div class="wc-line"><span class="wc-line-icon">🍽️</span><span class="wc-line-label">Harmoniza</span><span class="wc-line-val">${esc(w.pairing)}</span></div>` : '',
+    ].filter(Boolean).join('');
 
     return `
-      <div class="sw-card">
-        <div class="sw-card-visual">${imgHtml}</div>
-        <div class="sw-card-body">
-          <div class="sw-card-name">${esc(w.name)}</div>
-          ${w.winery || w.producer ? `<div class="sw-card-winery">${esc(w.winery || w.producer)}</div>` : ''}
-          <div class="sw-card-meta">
-            ${flagHtml}<span>${esc(w.country || '')}</span>
-            ${w.grapes ? `<span class="sw-sep">·</span><span>${esc(w.grapes)}</span>` : ''}
-            ${w.type   ? `<span class="sw-sep">·</span><span>${esc(w.type)}</span>`   : ''}
+      <div class="wine-card">
+        <div class="wc-header">
+          ${imgHtml}
+          <div class="wc-header-info">
+            <div class="wc-name">${esc(w.name)}</div>
+            ${w.winery || w.producer ? `<div class="wc-maker">${esc(w.winery || w.producer)}</div>` : ''}
+            ${w.country ? `<div class="wc-country">${flagHtml}<span>${esc(w.country)}</span></div>` : ''}
           </div>
-          ${w.pairing ? `<div class="sw-card-pairing">🍽️ ${esc(w.pairing)}</div>` : ''}
-          <div class="sw-card-price">${fmtPrice(w)}</div>
+        </div>
+        ${infoLines ? `<div class="wc-lines">${infoLines}</div>` : ''}
+        <div class="wc-footer">
+          <div class="wc-price-tag wc-line-val">${preco}</div>
         </div>
       </div>`;
   }
@@ -1058,7 +1064,7 @@ const searchWizard = (() => {
   }
 
   /* ── Resultados ────────────────────────────────────────────────────── */
-  function renderResults(wines, relaxed) {
+  function renderResults(wines, relaxed, relaxNote) {
     const thread = document.getElementById('thread');
 
     if (!wines.length) {
@@ -1091,13 +1097,12 @@ const searchWizard = (() => {
       if (container) container.innerHTML = sortWines(wines, currentOrder).map(renderCard).join('');
     }
 
-    const relaxNote = relaxed
-      ? `<p class="sw-relax-note">Mostrando resultados sem filtros de país e harmonização.</p>` : '';
+    const relaxNoteHtml = relaxNote ? `<p class="sw-relax-note">${relaxNote}</p>` : '';
 
     thread.innerHTML = `
       <div class="sw-wrap">
         ${renderSummary()}
-        ${relaxNote}
+        ${relaxNoteHtml}
         <div class="sw-results-header">
           <span class="sw-count">${wines.length} vinho${wines.length !== 1 ? 's' : ''} encontrado${wines.length !== 1 ? 's' : ''}</span>
           <div class="sw-sort">
@@ -1106,7 +1111,7 @@ const searchWizard = (() => {
             <button class="sw-sort-btn" data-order="caro">Mais caro</button>
           </div>
         </div>
-        <div class="sw-cards" id="swCards">${currentWines.map(renderCard).join('')}</div>
+        <div class="sw-cards wc-grid" id="swCards">${currentWines.map(renderCard).join('')}</div>
         <div class="sw-results-footer">
           <button class="sw-btn-ghost" id="swRestart">↺ Nova pesquisa</button>
         </div>
@@ -1191,17 +1196,53 @@ const searchWizard = (() => {
     const thread = document.getElementById('thread');
     thread.innerHTML = '<div class="sw-wrap" style="text-align:center;padding:40px"><p style="color:var(--ink-2)">🍷 Buscando vinhos...</p></div>';
 
-    // Aguarda catálogo se não carregou ainda
+    // Aguarda catálogo
     let catalog = winesDB.getCatalog();
     if (!catalog || !catalog.wines || !catalog.wines.length) {
-      try { await winesDB.fetchCatalog(); catalog = winesDB.getCatalog(); } catch(e) { console.error(e); }
+      try { await winesDB.fetchCatalog(); catalog = winesDB.getCatalog(); } catch(e) {}
+    }
+    const wines = catalog?.wines || [];
+
+    // Tenta com todos os filtros
+    let result = applyFilters(wines, st.answers, false);
+    let relaxNote = '';
+
+    // Relaxa progressivamente até ter ao menos 3 resultados
+    if (result.length < 3) {
+      // 1. Remove harmonização
+      const a1 = Object.assign({}, st.answers, { harmonizacao: null });
+      result = applyFilters(wines, a1, false);
+      relaxNote = 'Mostrando sugestões próximas ao seu perfil.';
+    }
+    if (result.length < 3) {
+      // 2. Remove país também
+      const a2 = Object.assign({}, st.answers, { harmonizacao: null, pais: null });
+      result = applyFilters(wines, a2, false);
+      relaxNote = 'Não encontramos exatamente, mas aqui estão os mais próximos.';
+    }
+    if (result.length < 3) {
+      // 3. Remove uva também
+      const a3 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null });
+      result = applyFilters(wines, a3, false);
+      relaxNote = 'Sugestões baseadas no tipo e faixa de preço escolhidos.';
+    }
+    if (result.length < 3) {
+      // 4. Remove estilo — mantém só preço e tipo
+      const a4 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null, estilo: null });
+      result = applyFilters(wines, a4, false);
+      relaxNote = 'Sugestões baseadas no tipo e faixa de preço escolhidos.';
+    }
+    if (result.length < 3) {
+      // 5. Remove tipo — só preço
+      const a5 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null, estilo: null, tipo: null });
+      result = applyFilters(wines, a5, false);
+      relaxNote = 'Sugestões disponíveis na faixa de preço escolhida.';
     }
 
-    const wines    = catalog?.wines || [];
-    console.log('[searchWizard] catálogo:', wines.length, 'vinhos | filtros:', JSON.stringify(st.answers));
-    const filtered = applyFilters(wines, st.answers, false);
-    console.log('[searchWizard] resultado:', filtered.length);
-    renderResults(filtered, false);
+    // Limita a 12 cards e ordena por custo-benefício
+    result = result.sort((a,b) => (a.cost_value||0) - (b.cost_value||0)).slice(0, 12);
+
+    renderResults(result, false, relaxNote);
   }
 
   /* ── Inicia ────────────────────────────────────────────────────────── */

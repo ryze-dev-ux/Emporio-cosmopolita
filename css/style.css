@@ -632,84 +632,13 @@ body::before {
 }
 
 
-/* ════════════════════════════════════════════════════════
-   searchWizard — Pesquisa Guiada de Vinhos
-   ════════════════════════════════════════════════════════ */
-
-.sw-progress-wrap { width:100%; max-width:520px; margin:0 auto 12px; }
-.sw-progress      { height:3px; background:var(--line); border-radius:2px; overflow:hidden; margin-bottom:5px; }
-.sw-progress-bar  { height:100%; background:var(--gold); border-radius:2px; transition:width .35s ease; }
-.sw-step-label    { font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
-
-.sw-summary       { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:12px; }
-.sw-tag           { padding:3px 10px; border-radius:20px; background:var(--gold); color:#1a1410; font-size:11px; font-weight:600; }
-
-.prompt-card.sw-selected { border-color:var(--gold); background:rgba(200,169,81,.08); }
-
-.sw-wrap          { padding:8px 0 32px; }
-
-.sw-results-header{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid var(--line); }
-.sw-count         { font-size:13px; font-weight:600; color:var(--ink-2); }
-
-.sw-sort          { display:flex; gap:6px; flex-wrap:wrap; }
-.sw-sort-btn      { padding:4px 12px; border-radius:20px; border:1px solid var(--line); background:var(--paper); color:var(--ink-2); font-family:var(--sans); font-size:11px; font-weight:500; cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
-.sw-sort-btn:hover{ background:var(--bg-2); color:var(--ink); }
-.sw-sort-btn.active{ background:var(--gold); color:#1a1410; border-color:var(--gold); font-weight:600; }
-
-.sw-cards         { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
-.sw-card          { display:flex; gap:12px; background:var(--paper); border:1px solid var(--line); border-radius:var(--r); padding:14px; transition:border-color .18s,box-shadow .18s,transform .14s; }
-.sw-card:hover    { border-color:var(--gold); box-shadow:var(--sh); transform:translateY(-1px); }
-.sw-card-visual   { flex-shrink:0; width:60px; display:flex; align-items:center; justify-content:center; }
-.sw-card-img      { width:60px; height:80px; object-fit:contain; border-radius:3px; }
-.sw-no-img        { width:60px; height:80px; display:flex; align-items:center; justify-content:center; font-size:28px; color:var(--ink-3); background:var(--bg); border-radius:3px; }
-.sw-card-body     { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
-.sw-card-name     { font-family:var(--sans); font-size:13px; font-weight:700; color:var(--ink); line-height:1.3; }
-.sw-card-winery   { font-size:11px; color:var(--ink-3); }
-.sw-card-meta     { display:flex; flex-wrap:wrap; align-items:center; gap:4px; font-size:11px; color:var(--ink-2); margin-top:1px; }
-.sw-sep           { color:var(--line-2); }
-.sw-card-pairing  { font-size:11px; color:var(--ink-3); }
-.sw-card-price    { font-family:var(--sans); font-size:14px; font-weight:700; color:var(--ink); margin-top:auto; padding-top:6px; }
-
-.sw-results-footer{ display:flex; justify-content:center; margin-top:24px; }
-.sw-empty         { text-align:center; padding:40px 0; color:var(--ink-2); line-height:1.8; }
-.sw-empty-icon    { font-size:40px; margin-bottom:12px; }
-.sw-empty-actions { display:flex; gap:10px; justify-content:center; margin-top:20px; }
-.sw-relax-note    { font-size:12px; color:var(--ink-3); text-align:center; margin-bottom:12px; font-style:italic; }
-
-.sw-btn-gold      { padding:8px 22px; background:var(--gold); color:#1a1410; border:none; border-radius:var(--r-sm); font-family:var(--sans); font-size:13px; font-weight:600; cursor:pointer; transition:opacity .15s; }
-.sw-btn-gold:hover{ opacity:.85; }
-.sw-btn-ghost     { padding:8px 20px; background:transparent; color:var(--ink-2); border:1px solid var(--line); border-radius:var(--r-sm); font-family:var(--sans); font-size:13px; font-weight:500; cursor:pointer; transition:background .15s,color .15s; }
-.sw-btn-ghost:hover{ background:var(--bg-2); color:var(--ink); }
-
-/* Botão toggle fixo */
-.rail-toggle {
-  position:fixed; top:14px; left:228px; z-index:300;
-  width:30px; height:30px; background:var(--paper);
-  border:1px solid var(--line); border-radius:6px;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  color:var(--ink-2); box-shadow:var(--sh);
-  transition:background .15s,color .15s,left .25s cubic-bezier(.4,0,.2,1);
+/* ── Grid de resultados do searchWizard ─────────────────── */
+.wc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  padding: 0;
 }
-.rail-toggle:hover { background:var(--bg-2); color:var(--ink); }
-.shell.rail-collapsed .rail-toggle { left:14px; }
-
-/* brand-text margin */
-.brand-text { display:flex; flex-direction:column; line-height:1.2; min-width:0; margin-left:-14px; }
-
-/* stage-head texto */
-.stage-head > div > div { margin-left:-14px; }
-
-/* Wz-back */
-.wz-back { margin-top:12px; background:none; border:none; font-family:var(--sans); font-size:13px; color:var(--ink-3); cursor:pointer; padding:4px 0; transition:color .15s; }
-.wz-back:hover { color:var(--ink); }
-
-/* wz-flag */
-.wz-flag { width:24px; height:18px; object-fit:cover; border-radius:2px; flex-shrink:0; }
-
-/* Responsivo searchWizard */
-@media (max-width:600px) {
-  .sw-cards { grid-template-columns:1fr; }
-  .sw-results-header { flex-direction:column; align-items:flex-start; }
-  .sw-card-img, .sw-no-img { width:48px; height:64px; }
-  .sw-card-visual { width:48px; }
+@media (max-width: 600px) {
+  .wc-grid { grid-template-columns: 1fr; }
 }
