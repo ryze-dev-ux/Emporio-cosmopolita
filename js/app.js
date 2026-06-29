@@ -971,23 +971,22 @@ const searchWizard = (() => {
         const cv = w.cost_value || 0;
         if (cv < pr.min || cv > pr.max) return false;
       }
-      // Tipo
-      if (ans.tipo) {
-        const wt = norm(w.type || '');
-        const lt = norm(ans.tipo);
-        // "vinho tinto" → busca "tinto", "vinho branco" → "branco", "espumante" → "espumante"
-        const keyword = lt.replace('vinho ', '');
-        if (!wt.includes(keyword)) return false;
+      // Tipo — mapeia "Vinho Tinto" → "tinto", "Vinho Branco" → "branco", "Espumante" → "espumante"
+      if (ans.tipo && w.type) {
+        const wt  = norm(w.type);
+        const map = { 'vinho tinto': 'tinto', 'vinho branco': 'branco', 'espumante': 'espumante' };
+        const keyword = map[norm(ans.tipo)] || norm(ans.tipo).replace('vinho ', '');
+        if (!wt.startsWith(keyword) && !wt.includes(keyword)) return false;
       }
-      // Estilo — busca no tipo e nome
-      if (ans.estilo) {
-        const haystack = norm((w.type || '') + ' ' + (w.name || ''));
-        if (!haystack.includes(norm(ans.estilo))) return false;
+      // Estilo — "Seco", "Suave", "Meio Seco" — busca no campo type
+      if (ans.estilo && w.type) {
+        const wt = norm(w.type);
+        const es = norm(ans.estilo);
+        if (!wt.includes(es)) return false;
       }
-      // Uva
-      if (ans.uva && norm(ans.uva) !== 'blend de uvas') {
-        const wg = norm(w.grapes || '');
-        // Normaliza shiraz/syrah
+      // Uva — só filtra se o vinho tem o campo preenchido
+      if (ans.uva && norm(ans.uva) !== 'blend de uvas' && w.grapes) {
+        const wg = norm(w.grapes);
         const terms = norm(ans.uva).replace('shiraz  syrah','syrah shiraz').split(' ').filter(t => t.length > 2);
         if (!terms.some(t => wg.includes(t))) return false;
       }
@@ -995,9 +994,9 @@ const searchWizard = (() => {
       if (!relaxed && ans.pais && !STEPS[4].options.find(o => o.label === ans.pais)?.any) {
         if (norm(w.country || '') !== norm(ans.pais)) return false;
       }
-      // Harmonização (ignorada se relaxado)
-      if (!relaxed && ans.harmonizacao && !STEPS[5].options.find(o => o.label === ans.harmonizacao)?.any) {
-        const wp = norm(w.pairing || '');
+      // Harmonização — só filtra se o vinho tem pairing preenchido
+      if (!relaxed && ans.harmonizacao && !STEPS[5].options.find(o => o.label === ans.harmonizacao)?.any && w.pairing) {
+        const wp = norm(w.pairing);
         const hterms = norm(ans.harmonizacao).split(' e ').flatMap(t => t.split(' ')).filter(t => t.length > 3);
         if (!hterms.some(t => wp.includes(t))) return false;
       }
