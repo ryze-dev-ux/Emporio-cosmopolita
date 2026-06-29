@@ -2,6 +2,7 @@
   "name": "emporio-cosmopolita",
   "version": "1.0.0",
   "dependencies": {
-    "@netlify/blobs": "^8.1.0"
+    "@netlify/blobs": "^8.1.0",
+    "xlsx": "^0.18.5"
   }
 }
