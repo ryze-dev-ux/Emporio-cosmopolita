@@ -1187,9 +1187,20 @@ const searchWizard = (() => {
   }
 
   /* ── Finaliza e filtra ─────────────────────────────────────────────── */
-  function finish() {
-    const wines    = winesDB.getCatalog()?.wines || [];
+  async function finish() {
+    const thread = document.getElementById('thread');
+    thread.innerHTML = '<div class="sw-wrap" style="text-align:center;padding:40px"><p style="color:var(--ink-2)">🍷 Buscando vinhos...</p></div>';
+
+    // Aguarda catálogo se não carregou ainda
+    let catalog = winesDB.getCatalog();
+    if (!catalog || !catalog.wines || !catalog.wines.length) {
+      try { await winesDB.fetchCatalog(); catalog = winesDB.getCatalog(); } catch(e) { console.error(e); }
+    }
+
+    const wines    = catalog?.wines || [];
+    console.log('[searchWizard] catálogo:', wines.length, 'vinhos | filtros:', JSON.stringify(st.answers));
     const filtered = applyFilters(wines, st.answers, false);
+    console.log('[searchWizard] resultado:', filtered.length);
     renderResults(filtered, false);
   }
 
