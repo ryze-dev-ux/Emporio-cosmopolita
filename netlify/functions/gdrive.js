@@ -146,7 +146,7 @@ function parseXlsx(buf) {
     if (hasQty && qty <= 0) continue;
     const costRaw = get(row,'cost');
     const costVal = parseNum(costRaw);
-    if (costVal <= 0.01) continue;
+    if (costVal < 1) continue;
     wines.push({
       id:           'r'+i,
       name:         name,
