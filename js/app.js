@@ -1097,35 +1097,13 @@ const searchWizard = (() => {
       if (container) container.innerHTML = sortWines(wines, currentOrder).map(renderCard).join('');
     }
 
-    const relaxNoteHtml = relaxNote ? `<p class="sw-relax-note">${relaxNote}</p>` : '';
-
     thread.innerHTML = `
       <div class="sw-wrap">
-        ${renderSummary()}
-        ${relaxNoteHtml}
-        <div class="sw-results-header">
-          <span class="sw-count">${wines.length} vinho${wines.length !== 1 ? 's' : ''} encontrado${wines.length !== 1 ? 's' : ''}</span>
-          <div class="sw-sort">
-            <button class="sw-sort-btn active" data-order="cb">Custo-benefício</button>
-            <button class="sw-sort-btn" data-order="med">Preço médio</button>
-            <button class="sw-sort-btn" data-order="caro">Mais caro</button>
-          </div>
-        </div>
         <div class="sw-cards wc-grid" id="swCards">${currentWines.map(renderCard).join('')}</div>
         <div class="sw-results-footer">
           <button class="sw-btn-ghost" id="swRestart">↺ Nova pesquisa</button>
         </div>
       </div>`;
-
-    // Ordenação
-    thread.querySelectorAll('.sw-sort-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        currentOrder = btn.dataset.order;
-        thread.querySelectorAll('.sw-sort-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        rebuildCards();
-      });
-    });
 
     document.getElementById('swRestart').addEventListener('click', start);
   }
