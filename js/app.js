@@ -1067,24 +1067,13 @@ const searchWizard = (() => {
   function renderResults(wines, relaxed, relaxNote) {
     const thread = document.getElementById('thread');
 
+    // Se ainda assim não houver resultados, mostra botão de nova pesquisa
     if (!wines.length) {
       thread.innerHTML = `
-        <div class="sw-wrap">
-          ${renderSummary()}
-          <div class="sw-empty">
-            <div class="sw-empty-icon">🍷</div>
-            <p>Não encontramos vinhos com todos os critérios selecionados.</p>
-            <p>Deseja ampliar a busca?</p>
-            <div class="sw-empty-actions">
-              <button class="sw-btn-gold" id="swRelax">Ampliar busca</button>
-              <button class="sw-btn-ghost" id="swRestart">Nova pesquisa</button>
-            </div>
-          </div>
+        <div class="sw-wrap" style="text-align:center;padding:48px 0">
+          <p style="color:var(--ink-2);font-size:15px;margin-bottom:20px">Nenhum vinho encontrado na faixa selecionada.</p>
+          <button class="sw-btn-ghost" id="swRestart">↺ Nova pesquisa</button>
         </div>`;
-      document.getElementById('swRelax').addEventListener('click', () => {
-        const all = winesDB.getCatalog()?.wines || [];
-        renderResults(applyFilters(all, st.answers, true), true);
-      });
       document.getElementById('swRestart').addEventListener('click', start);
       return;
     }
@@ -1137,13 +1126,7 @@ const searchWizard = (() => {
     thread.innerHTML = `
       <div class="opener" id="opener">
         <img src="logo.png" alt="Empório Cosmopolita" class="opener-logo">
-        <p class="opener-eyebrow">— Pesquisa de Vinhos</p>
-        <div class="sw-progress-wrap">
-          <div class="sw-progress"><div class="sw-progress-bar" style="width:${pct}%"></div></div>
-          <span class="sw-step-label">Etapa ${st.step + 1} de ${STEPS.length} — ${step.icon} ${step.label}</span>
-        </div>
-        ${renderSummary()}
-        <h1 class="opener-title">${step.question || step.label}</h1>
+        <h1 class="opener-title">${step.label}</h1>
         <div class="prompt-grid">${cards}</div>
         ${backBtn}
       </div>`;
@@ -1157,7 +1140,7 @@ const searchWizard = (() => {
         else st.answers[step.key] = label;
 
         st.step++;
-        if (st.step >= STEPS.length) finish();
+        if (st.step >= STEPS.length) { finish(); return; }
         else renderStep();
       });
     });

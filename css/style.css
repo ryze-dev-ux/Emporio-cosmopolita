@@ -642,3 +642,20 @@ body::before {
 @media (max-width: 600px) {
   .wc-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Botão Voltar do wizard ──────────────────────────────── */
+.wz-back {
+  display: block;
+  margin: 16px auto 0;
+  background: none;
+  border: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 6px 16px;
+  letter-spacing: .04em;
+  transition: color .15s;
+}
+.wz-back:hover { color: var(--ink); }
