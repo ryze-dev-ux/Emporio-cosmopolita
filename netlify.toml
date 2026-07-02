@@ -41,6 +41,13 @@
   status = 200
   force  = true
 
+
+[[redirects]]
+  from   = "/api/gdrive"
+  to     = "/.netlify/functions/gdrive"
+  status = 200
+  force  = true
+
 [[headers]]
   for = "/*"
   [headers.values]
