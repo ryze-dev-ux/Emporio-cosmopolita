@@ -424,14 +424,14 @@ body::before {
 }
 .wc-name {
   font-family: var(--serif);
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--ink);
   letter-spacing: -.01em;
   line-height: 1.2;
 }
 .wc-maker {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--ink-3);
   margin-top: 4px;
   font-style: italic;
@@ -476,7 +476,7 @@ body::before {
 .wc-line-label {
   flex-shrink: 0;
   min-width: 90px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -485,7 +485,7 @@ body::before {
 }
 .wc-line-val {
   flex: 1;
-  font-size: 13.5px;
+  font-size: 15px;
   color: var(--ink);
   font-weight: 400;
 }
@@ -513,21 +513,21 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 12px 20px 14px;
+  gap: 12px;
+  padding: 10px 20px 12px;
   border-top: 1px solid var(--line);
   background: var(--bg);
 }
 .wc-why-text {
   flex: 1;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink-2);
   line-height: 1.5;
 }
 .wc-price-tag {
   flex-shrink: 0;
-  font-family: var(--serif);
-  font-size: 17px;
+  font-family: 'Inter Tight', var(--sans);
+  font-size: 14px;
   font-weight: 600;
   color: var(--wine);
   letter-spacing: -.01em;

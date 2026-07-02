@@ -1003,8 +1003,16 @@ const searchWizard = (() => {
   }
 
   /* ── Card de resultado ─────────────────────────────────────────────── */
-  function renderCard(w) {
-    // Imagem do Drive — obrigatória, lazy load se mapa ainda não carregou
+  function buildWhyText(w, label) {
+    // Gera frase "por que foi escolhido" baseada no label e no vinho
+    if (!label) return '';
+    if (label.includes('Custo'))   return `Excelente relação qualidade-preço entre as opções disponíveis.`;
+    if (label.includes('Médio'))   return `Equilíbrio ideal entre sofisticação e acessibilidade.`;
+    if (label.includes('Premium')) return `A escolha mais premium do nosso acervo para este perfil.`;
+    return '';
+  }
+
+  function renderCard(w, label) {
     let imgUrl = null;
     try { imgUrl = wineImageUrl(w.name); } catch {}
 
@@ -1015,6 +1023,7 @@ const searchWizard = (() => {
     const cc = COUNTRY_CC[norm(w.country || '')];
     const flagHtml = flagImg(cc, w.country || '');
     const preco    = fmtPrice(w);
+    const why      = buildWhyText(w, label);
 
     const infoLines = [
       w.type        ? `<div class="wc-line"><span class="wc-line-icon">🍷</span><span class="wc-line-label">Tipo</span><span class="wc-line-val">${esc(w.type)}</span></div>`        : '',
@@ -1035,6 +1044,7 @@ const searchWizard = (() => {
         </div>
         ${infoLines ? `<div class="wc-lines">${infoLines}</div>` : ''}
         <div class="wc-footer">
+          ${why ? `<div class="wc-why-text">✦ ${why}</div>` : ''}
           <span class="wc-price-tag">${preco}</span>
         </div>
       </div>`;
@@ -1091,11 +1101,7 @@ const searchWizard = (() => {
 
     const labels = ['💚 Custo-Benefício', '🥂 Preço Médio', '✨ Premium'];
 
-    const cardsHtml = trio.map((w, i) => `
-      <div class="sw-trio-wrap">
-        <div class="sw-trio-label">${labels[i] || ''}</div>
-        ${renderCard(w)}
-      </div>`).join('');
+    const cardsHtml = trio.map((w, i) => renderCard(w, labels[i])).join('');
 
     thread.innerHTML = `
       <div class="sw-wrap">
