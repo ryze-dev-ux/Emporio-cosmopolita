@@ -1192,18 +1192,9 @@ const searchWizard = (() => {
     const thread = document.getElementById('thread');
     thread.innerHTML = '<div class="sw-wrap" style="text-align:center;padding:40px"><p style="color:var(--ink-2)">🍷 Buscando vinhos...</p></div>';
 
-    // Usa catálogo já carregado no boot; se vazio tenta buscar com timeout
+    // Usa catálogo já carregado no boot — não faz novo fetch
     let catalog = winesDB.getCatalog();
-    if (!catalog || !catalog.wines || !catalog.wines.length) {
-      try {
-        await Promise.race([
-          winesDB.fetchCatalog(),
-          new Promise(res => setTimeout(res, 6000))
-        ]);
-        catalog = winesDB.getCatalog();
-      } catch(e) {}
-    }
-    const wines = catalog?.wines || [];
+    const wines = (catalog && catalog.wines && catalog.wines.length) ? catalog.wines : [];
 
     // Tenta com todos os filtros
     let result = applyFilters(wines, st.answers, false);
