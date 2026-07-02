@@ -659,3 +659,103 @@ body::before {
   transition: color .15s;
 }
 .wz-back:hover { color: var(--ink); }
+
+/* ── Trio de vinhos ──────────────────────────────────────── */
+.sw-trio {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 4px 0;
+}
+.sw-trio-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sw-trio-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-left: 2px;
+}
+.wine-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.wc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 16px 12px;
+}
+.wc-bottle-img {
+  width: 56px;
+  height: 80px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+.wc-header-info {
+  flex: 1;
+  min-width: 0;
+}
+.wc-name {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  margin-bottom: 3px;
+}
+.wc-maker {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-bottom: 5px;
+}
+.wc-country {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.wc-flag { border-radius: 2px; }
+.wc-lines {
+  border-top: 1px solid var(--line);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.wc-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.wc-line-icon { font-size: 11px; }
+.wc-line-label {
+  color: var(--ink-3);
+  min-width: 72px;
+  font-size: 11px;
+}
+.wc-line-val { color: var(--ink); font-weight: 500; }
+.wc-footer {
+  border-top: 1px solid var(--line);
+  padding: 10px 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+.wc-price-tag {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}

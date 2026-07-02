@@ -1067,7 +1067,6 @@ const searchWizard = (() => {
   function renderResults(wines, relaxed, relaxNote) {
     const thread = document.getElementById('thread');
 
-    // Se ainda assim não houver resultados, mostra botão de nova pesquisa
     if (!wines.length) {
       thread.innerHTML = `
         <div class="sw-wrap" style="text-align:center;padding:48px 0">
@@ -1078,17 +1077,28 @@ const searchWizard = (() => {
       return;
     }
 
-    let currentOrder = 'cb';
-    let currentWines = sortWines(wines, currentOrder);
+    // Seleciona 3 vinhos: custo-benefício, preço médio e mais caro
+    const sorted = [...wines].sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
+    const cb   = sorted[0];
+    const med  = sorted[Math.floor((sorted.length - 1) / 2)];
+    const caro = sorted[sorted.length - 1];
 
-    function rebuildCards() {
-      const container = document.getElementById('swCards');
-      if (container) container.innerHTML = sortWines(wines, currentOrder).map(renderCard).join('');
-    }
+    // Evita repetição se lista tiver poucos vinhos
+    const trio = [cb];
+    if (med && med.id !== cb.id) trio.push(med);
+    if (caro && caro.id !== cb.id && caro.id !== (med?.id)) trio.push(caro);
+
+    const labels = ['💚 Custo-Benefício', '🥂 Preço Médio', '✨ Premium'];
+
+    const cardsHtml = trio.map((w, i) => `
+      <div class="sw-trio-wrap">
+        <div class="sw-trio-label">${labels[i] || ''}</div>
+        ${renderCard(w)}
+      </div>`).join('');
 
     thread.innerHTML = `
       <div class="sw-wrap">
-        <div class="sw-cards wc-grid" id="swCards">${currentWines.map(renderCard).join('')}</div>
+        <div class="sw-trio" id="swCards">${cardsHtml}</div>
         <div class="sw-results-footer">
           <button class="sw-btn-ghost" id="swRestart">↺ Nova pesquisa</button>
         </div>
