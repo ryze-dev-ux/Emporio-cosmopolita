@@ -1004,38 +1004,37 @@ const searchWizard = (() => {
 
   /* ── Card de resultado ─────────────────────────────────────────────── */
   function renderCard(w) {
-    // Imagem: tenta do mapa; usa placeholder com data-wine para lazy load posterior
+    // Imagem do Drive — obrigatória, lazy load se mapa ainda não carregou
     let imgUrl = null;
     try { imgUrl = wineImageUrl(w.name); } catch {}
 
-    const imgHtml = imgUrl
-      ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="sw-wc-img" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=sw-wc-img-ph>🍷</div>')">`
-      : `<div class="sw-wc-img-ph" data-wine="${esc(w.name)}">🍷</div>`;
+    const imgEl = imgUrl
+      ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="wc-bottle-img" loading="lazy" onerror="this.style.display='none'">`
+      : `<div class="wc-bottle-ph" data-wine="${esc(w.name)}">🍷</div>`;
 
-    const cc      = COUNTRY_CC[norm(w.country || '')];
-    const flagHtml = cc ? `<img src="https://flagcdn.com/16x12/${cc}.png" width="16" height="12" alt="${esc(w.country)}" class="sw-wc-flag">` : '';
-    const preco   = fmtPrice(w);
+    const flagHtml = countryFlag(w.country || '');
+    const preco    = fmtPrice(w);
 
-    const lines = [
-      w.type        ? `<div class="sw-wc-line"><span class="sw-wc-icon">🍷</span><span class="sw-wc-lbl">Tipo</span><span class="sw-wc-val">${esc(w.type)}</span></div>` : '',
-      w.grapes      ? `<div class="sw-wc-line"><span class="sw-wc-icon">🍇</span><span class="sw-wc-lbl">Uva</span><span class="sw-wc-val">${esc(w.grapes)}</span></div>` : '',
-      w.temperature ? `<div class="sw-wc-line"><span class="sw-wc-icon">🌡️</span><span class="sw-wc-lbl">Temperatura</span><span class="sw-wc-val">${esc(w.temperature)}</span></div>` : '',
-      w.pairing     ? `<div class="sw-wc-line"><span class="sw-wc-icon">🍽️</span><span class="sw-wc-lbl">Harmoniza</span><span class="sw-wc-val">${esc(w.pairing)}</span></div>` : '',
+    const infoLines = [
+      w.type        ? `<div class="wc-line"><span class="wc-line-icon">🍷</span><span class="wc-line-label">Tipo</span><span class="wc-line-val">${esc(w.type)}</span></div>`        : '',
+      w.grapes      ? `<div class="wc-line"><span class="wc-line-icon">🍇</span><span class="wc-line-label">Uva</span><span class="wc-line-val">${esc(w.grapes)}</span></div>`         : '',
+      w.temperature ? `<div class="wc-line"><span class="wc-line-icon">🌡️</span><span class="wc-line-label">Temperatura</span><span class="wc-line-val">${esc(w.temperature)}</span></div>` : '',
+      w.pairing     ? `<div class="wc-line"><span class="wc-line-icon">🍽️</span><span class="wc-line-label">Harmoniza</span><span class="wc-line-val">${esc(w.pairing)}</span></div>`  : '',
     ].filter(Boolean).join('');
 
     return `
-      <div class="sw-wine-card">
-        <div class="sw-wc-header">
-          ${imgHtml}
-          <div class="sw-wc-info">
-            <div class="sw-wc-name">${esc(w.name)}</div>
-            ${w.winery ? `<div class="sw-wc-maker">${esc(w.winery)}</div>` : ''}
-            ${w.country ? `<div class="sw-wc-country">${flagHtml}<span>${esc(w.country)}</span></div>` : ''}
+      <div class="wine">
+        <div class="wc-header" style="display:flex;align-items:center;gap:14px;">
+          ${imgEl}
+          <div style="flex:1;min-width:0">
+            <div class="wc-name">${esc(w.name)}</div>
+            ${w.winery ? `<div class="wc-maker">${esc(w.winery)}</div>` : ''}
+            ${w.country ? `<div class="wc-country" style="display:flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;color:var(--ink-2)">${flagHtml}<span>${esc(w.country)}</span></div>` : ''}
           </div>
         </div>
-        ${lines ? `<div class="sw-wc-lines">${lines}</div>` : ''}
-        <div class="sw-wc-footer">
-          <span class="sw-wc-price">${preco}</span>
+        ${infoLines ? `<div class="wc-lines">${infoLines}</div>` : ''}
+        <div class="wc-footer">
+          <span class="wc-price-tag">${preco}</span>
         </div>
       </div>`;
   }
@@ -1111,13 +1110,13 @@ const searchWizard = (() => {
     if (!window._driveImages || !Object.keys(window._driveImages).length) {
       winesDB.fetchImageMap().then(map => {
         window._driveImages = map;
-        document.querySelectorAll('.sw-wc-img-ph[data-wine]').forEach(el => {
+        document.querySelectorAll('.wc-bottle-ph[data-wine]').forEach(el => {
           const url = wineImageUrl(el.dataset.wine);
           if (url) {
             const img = document.createElement('img');
             img.src = url;
             img.alt = el.dataset.wine;
-            img.className = 'sw-wc-img';
+            img.className = 'wc-bottle-img';
             img.loading = 'lazy';
             img.onerror = function() { this.style.display='none'; };
             el.replaceWith(img);
