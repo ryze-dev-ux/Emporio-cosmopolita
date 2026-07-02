@@ -593,7 +593,7 @@ const winesDB = (() => {
   }
 
   return {
-    importFile, fetchCatalog, validateFile,
+    importFile, fetchCatalog, fetchImageMap, validateFile,
     getCatalog: () => _catalog,
     getCount:   () => (_catalog && _catalog.wines && _catalog.wines.length) || 0,
     getMeta:    () => (_catalog && _catalog.meta) || null,
@@ -1192,19 +1192,18 @@ const searchWizard = (() => {
     const thread = document.getElementById('thread');
     thread.innerHTML = '<div class="sw-wrap" style="text-align:center;padding:40px"><p style="color:var(--ink-2)">🍷 Buscando vinhos...</p></div>';
 
-    // Aguarda catálogo com timeout de 8s
+    // Usa catálogo já carregado no boot; se vazio tenta buscar com timeout
     let catalog = winesDB.getCatalog();
     if (!catalog || !catalog.wines || !catalog.wines.length) {
       try {
         await Promise.race([
           winesDB.fetchCatalog(),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+          new Promise(res => setTimeout(res, 6000))
         ]);
         catalog = winesDB.getCatalog();
-      } catch(e) { console.warn('[finish] catalog timeout ou erro:', e.message); }
+      } catch(e) {}
     }
     const wines = catalog?.wines || [];
-    console.log('[finish] wines:', wines.length, 'answers:', JSON.stringify(st.answers));
 
     // Tenta com todos os filtros
     let result = applyFilters(wines, st.answers, false);
