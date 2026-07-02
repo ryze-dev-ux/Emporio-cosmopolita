@@ -1004,12 +1004,13 @@ const searchWizard = (() => {
 
   /* ── Card de resultado ─────────────────────────────────────────────── */
   function renderCard(w) {
+    // Tenta imagem agora; se mapa ainda não carregou, usa placeholder com data-name para lazy load
     let imgUrl = null;
     try { imgUrl = wineImageUrl(w.name); } catch {}
 
     const imgHtml = imgUrl
       ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="wc-bottle-img" loading="lazy" onerror="this.style.display='none'">`
-      : '';
+      : `<div class="wc-bottle-ph" data-wine="${esc(w.name)}">🍷</div>`;
 
     const cc       = COUNTRY_CC[norm(w.country || '')];
     const flagHtml = cc ? `<img src="https://flagcdn.com/16x12/${cc}.png" width="16" height="12" alt="${esc(w.country)}" class="wc-flag">` : '';
@@ -1105,6 +1106,25 @@ const searchWizard = (() => {
       </div>`;
 
     document.getElementById('swRestart').addEventListener('click', start);
+
+    // Se imagens ainda não carregaram, aguarda e injeta
+    if (!window._driveImages || !Object.keys(window._driveImages).length) {
+      winesDB.fetchImageMap().then(map => {
+        window._driveImages = map;
+        document.querySelectorAll('.wc-bottle-ph[data-wine]').forEach(el => {
+          const url = wineImageUrl(el.dataset.wine);
+          if (url) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = el.dataset.wine;
+            img.className = 'wc-bottle-img';
+            img.loading = 'lazy';
+            img.onerror = function() { this.style.display='none'; };
+            el.replaceWith(img);
+          }
+        });
+      });
+    }
   }
 
   /* ── Renderiza etapa ───────────────────────────────────────────────── */

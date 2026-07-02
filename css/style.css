@@ -663,20 +663,15 @@ body::before {
 /* ── Trio de vinhos ──────────────────────────────────────── */
 .sw-trio {
   display: flex;
-  flex-direction: row;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
   padding: 4px 0;
-  align-items: stretch;
-}
-@media (max-width: 600px) {
-  .sw-trio { flex-direction: column; }
 }
 .sw-trio-wrap {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex: 1;
-  min-width: 0;
+  width: 100%;
 }
 .sw-trio-label {
   font-family: var(--sans);
@@ -695,20 +690,19 @@ body::before {
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
   display: flex;
   flex-direction: column;
-  flex: 1;
 }
 .wc-header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 14px 14px 10px;
+  gap: 14px;
+  padding: 16px 16px 12px;
 }
 .wc-bottle-img {
-  width: 44px;
-  height: 68px;
+  width: 52px;
+  height: 80px;
   object-fit: contain;
   flex-shrink: 0;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 .wc-header-info {
   flex: 1;
@@ -769,4 +763,15 @@ body::before {
   font-size: 16px;
   font-weight: 700;
   color: var(--ink);
+}
+
+.wc-bottle-ph {
+  width: 52px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+  opacity: .4;
 }
