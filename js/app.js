@@ -1100,7 +1100,13 @@ const searchWizard = (() => {
       <div class="sw-wrap">
         <div class="sw-trio" id="swCards">${cardsHtml}</div>
         <div class="sw-results-footer">
-          <button class="sw-btn-ghost" id="swRestart">↺ Nova pesquisa</button>
+          <button class="sw-btn-nova-pesquisa" id="swRestart">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            Nova pesquisa
+          </button>
         </div>
       </div>`;
 
@@ -1186,12 +1192,19 @@ const searchWizard = (() => {
     const thread = document.getElementById('thread');
     thread.innerHTML = '<div class="sw-wrap" style="text-align:center;padding:40px"><p style="color:var(--ink-2)">🍷 Buscando vinhos...</p></div>';
 
-    // Aguarda catálogo
+    // Aguarda catálogo com timeout de 8s
     let catalog = winesDB.getCatalog();
     if (!catalog || !catalog.wines || !catalog.wines.length) {
-      try { await winesDB.fetchCatalog(); catalog = winesDB.getCatalog(); } catch(e) {}
+      try {
+        await Promise.race([
+          winesDB.fetchCatalog(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+        ]);
+        catalog = winesDB.getCatalog();
+      } catch(e) { console.warn('[finish] catalog timeout ou erro:', e.message); }
     }
     const wines = catalog?.wines || [];
+    console.log('[finish] wines:', wines.length, 'answers:', JSON.stringify(st.answers));
 
     // Tenta com todos os filtros
     let result = applyFilters(wines, st.answers, false);

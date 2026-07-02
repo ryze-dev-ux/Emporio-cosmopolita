@@ -911,3 +911,39 @@ body::before {
   letter-spacing: -.01em;
 }
 
+
+/* ── Botão Nova Pesquisa ─────────────────────────────────── */
+.sw-results-footer {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 8px;
+}
+.sw-btn-nova-pesquisa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 40px;
+  padding: 10px 24px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  letter-spacing: .03em;
+  cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.sw-btn-nova-pesquisa:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(168,132,61,.05);
+}
+.sw-btn-nova-pesquisa svg {
+  opacity: .6;
+  transition: opacity .2s, transform .3s;
+}
+.sw-btn-nova-pesquisa:hover svg {
+  opacity: 1;
+  transform: rotate(-30deg);
+}
