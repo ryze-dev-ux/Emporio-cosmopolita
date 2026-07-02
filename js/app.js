@@ -1012,7 +1012,8 @@ const searchWizard = (() => {
       ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="wc-bottle-img" loading="lazy" onerror="this.style.display='none'">`
       : `<div class="wc-bottle-ph" data-wine="${esc(w.name)}">🍷</div>`;
 
-    const flagHtml = countryFlag(w.country || '');
+    const cc = COUNTRY_CC[norm(w.country || '')];
+    const flagHtml = flagImg(cc, w.country || '');
     const preco    = fmtPrice(w);
 
     const infoLines = [
