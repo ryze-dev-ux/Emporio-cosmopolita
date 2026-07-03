@@ -1163,7 +1163,7 @@ const searchWizard = (() => {
     }).join('');
 
     const backBtn = st.step > 0
-      ? `<button class="wz-back" id="swBack">← Voltar</button>` : '';
+      ? `<button class="wz-back" id="swBack">Voltar</button>` : '';
 
     thread.innerHTML = `
       <div class="opener" id="opener">
