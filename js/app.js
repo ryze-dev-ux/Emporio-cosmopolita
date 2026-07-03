@@ -787,6 +787,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   ui.injectImportBanner();
   const loaded = await winesDB.fetchCatalog();
   if (loaded) ui.updateBadge();
+
+  // Pré-carrega mapa de imagens do Drive em paralelo (sem bloquear)
+  winesDB.fetchImageMap().then(map => {
+    if (map && Object.keys(map).length) {
+      window._driveImages = map;
+    }
+  }).catch(() => {});
 });
 
 /* ═══════════════════════════════════════════════════════════
@@ -1119,23 +1126,30 @@ const searchWizard = (() => {
 
     document.getElementById('swRestart').addEventListener('click', start);
 
-    // Se imagens ainda não carregaram, aguarda e injeta
-    if (!window._driveImages || !Object.keys(window._driveImages).length) {
-      winesDB.fetchImageMap().then(map => {
-        window._driveImages = map;
-        document.querySelectorAll('.wc-bottle-ph[data-wine]').forEach(el => {
-          const url = wineImageUrl(el.dataset.wine);
-          if (url) {
-            const img = document.createElement('img');
-            img.src = url;
-            img.alt = el.dataset.wine;
-            img.className = 'wc-bottle-img';
-            img.loading = 'lazy';
-            img.onerror = function() { this.style.display='none'; };
-            el.replaceWith(img);
-          }
-        });
+    // Injeta imagens — usa mapa em cache ou aguarda fetch
+    function injectImages(map) {
+      if (!map || !Object.keys(map).length) return;
+      window._driveImages = map;
+      document.querySelectorAll('.wc-bottle-ph[data-wine]').forEach(el => {
+        const url = wineImageUrl(el.dataset.wine);
+        if (url) {
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = el.dataset.wine;
+          img.className = 'wc-bottle-img';
+          img.loading = 'lazy';
+          img.onerror = function() { this.style.display = 'none'; };
+          el.replaceWith(img);
+        }
       });
+    }
+
+    if (window._driveImages && Object.keys(window._driveImages).length) {
+      // Mapa já em cache — injeta imediatamente
+      injectImages(window._driveImages);
+    } else {
+      // Aguarda fetch e injeta quando pronto
+      winesDB.fetchImageMap().then(injectImages).catch(() => {});
     }
   }
 
