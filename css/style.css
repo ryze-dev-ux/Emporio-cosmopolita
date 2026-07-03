@@ -424,14 +424,14 @@ body::before {
 }
 .wc-name {
   font-family: var(--serif);
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--ink);
   letter-spacing: -.01em;
   line-height: 1.2;
 }
 .wc-maker {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--ink-3);
   margin-top: 4px;
   font-style: italic;
@@ -459,16 +459,16 @@ body::before {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  padding: 11px 20px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--line);
-  line-height: 1.55;
+  line-height: 1.5;
 }
 .wc-line:last-child { border-bottom: none; }
 
 .wc-line-icon {
-  font-size: 17px;
+  font-size: 16px;
   flex-shrink: 0;
-  width: 24px;
+  width: 22px;
   text-align: center;
   line-height: 1;
   margin-top: 1px;
@@ -476,7 +476,7 @@ body::before {
 .wc-line-label {
   flex-shrink: 0;
   min-width: 90px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -485,7 +485,7 @@ body::before {
 }
 .wc-line-val {
   flex: 1;
-  font-size: 15px;
+  font-size: 13.5px;
   color: var(--ink);
   font-weight: 400;
 }
@@ -513,21 +513,21 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 20px 12px;
+  gap: 14px;
+  padding: 12px 20px 14px;
   border-top: 1px solid var(--line);
   background: var(--bg);
 }
 .wc-why-text {
   flex: 1;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--ink-2);
   line-height: 1.5;
 }
 .wc-price-tag {
   flex-shrink: 0;
-  font-family: 'Inter Tight', var(--sans);
-  font-size: 14px;
+  font-family: var(--serif);
+  font-size: 17px;
   font-weight: 600;
   color: var(--wine);
   letter-spacing: -.01em;
@@ -562,6 +562,31 @@ body::before {
 
 /* Linha do topo: logo+título e botão minimizar */
 
+
+
+/* Preço no rodapé do card */
+.wc-price-tag {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-left: auto;
+}
+
+
+/* Botão Voltar do wizard */
+.wz-back {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color .15s;
+}
+.wz-back:hover { color: var(--ink); }
 
 /* ── Responsivo ─────────────────────────────────────────── */
 @media (max-width: 860px) {
@@ -631,319 +656,3 @@ body::before {
   left: 14px;
 }
 
-
-/* ── Grid de resultados do searchWizard ─────────────────── */
-.wc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-  padding: 0;
-}
-@media (max-width: 600px) {
-  .wc-grid { grid-template-columns: 1fr; }
-}
-
-/* ── Botão Voltar do wizard ──────────────────────────────── */
-.wz-back {
-  display: block;
-  margin: 16px auto 0;
-  background: none;
-  border: none;
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink-3);
-  cursor: pointer;
-  padding: 6px 16px;
-  letter-spacing: .04em;
-  transition: color .15s;
-}
-.wz-back:hover { color: var(--ink); }
-
-/* ── Trio de vinhos ──────────────────────────────────────── */
-.sw-trio {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 4px 0;
-}
-.sw-trio-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-.sw-trio-label {
-  font-family: var(--sans);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  padding-left: 2px;
-}
-.wine-card {
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--paper);
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  display: flex;
-  flex-direction: column;
-}
-.wc-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 16px 16px 12px;
-}
-.wc-bottle-img {
-  width: 52px;
-  height: 80px;
-  object-fit: contain;
-  flex-shrink: 0;
-  border-radius: 4px;
-}
-.wc-header-info {
-  flex: 1;
-  min-width: 0;
-}
-.wc-name {
-  font-family: var(--serif);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  line-height: 1.3;
-  margin-bottom: 3px;
-}
-.wc-maker {
-  font-size: 11px;
-  color: var(--ink-2);
-  margin-bottom: 4px;
-}
-.wc-country {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--ink-2);
-}
-.wc-flag { border-radius: 2px; }
-.wc-lines {
-  border-top: 1px solid var(--line);
-  padding: 8px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-.wc-line {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  font-size: 11px;
-  color: var(--ink-2);
-}
-.wc-line-icon { font-size: 10px; }
-.wc-line-label {
-  color: var(--ink-3);
-  min-width: 64px;
-  font-size: 10px;
-}
-.wc-line-val { color: var(--ink); font-weight: 500; }
-.wc-footer {
-  border-top: 1px solid var(--line);
-  padding: 10px 14px;
-  display: flex;
-  justify-content: flex-end;
-  margin-top: auto;
-}
-.wc-price-tag {
-  font-family: 'Inter Tight', var(--sans);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.wc-bottle-ph {
-  width: 52px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  flex-shrink: 0;
-  opacity: .4;
-}
-
-
-/* ── Trio de vinhos ──────────────────────────────────────── */
-.sw-trio {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 4px 0;
-  max-width: 420px;
-  margin: 0 auto;
-}
-.sw-trio-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.sw-trio-label {
-  font-family: var(--sans);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--gold);
-  padding-left: 2px;
-}
-
-/* Card do wizard — mesmo estilo dos cards da IA */
-.sw-wine-card {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--paper);
-  overflow: hidden;
-  box-shadow: var(--sh);
-}
-
-/* Header: imagem + nome + vinícola + país */
-.sw-wc-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px 12px;
-  border-bottom: 1px solid var(--line);
-}
-.sw-wc-img {
-  width: 48px;
-  height: 72px;
-  object-fit: contain;
-  flex-shrink: 0;
-  border-radius: 4px;
-}
-.sw-wc-img-ph {
-  width: 48px;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  flex-shrink: 0;
-  opacity: .35;
-  background: var(--bg);
-  border-radius: 4px;
-}
-.sw-wc-info { flex: 1; min-width: 0; }
-.sw-wc-name {
-  font-family: var(--serif);
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--ink);
-  letter-spacing: -.01em;
-  line-height: 1.2;
-  margin-bottom: 3px;
-}
-.sw-wc-maker {
-  font-size: 12px;
-  color: var(--ink-3);
-  font-style: italic;
-  margin-bottom: 5px;
-}
-.sw-wc-country {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: var(--ink-2);
-}
-.sw-wc-flag { border-radius: 2px; }
-
-/* Linhas de informação */
-.sw-wc-lines { display: flex; flex-direction: column; }
-.sw-wc-line {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--line);
-  line-height: 1.5;
-}
-.sw-wc-line:last-child { border-bottom: none; }
-.sw-wc-icon {
-  font-size: 14px;
-  flex-shrink: 0;
-  width: 20px;
-  text-align: center;
-}
-.sw-wc-lbl {
-  flex-shrink: 0;
-  min-width: 80px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-.sw-wc-val {
-  flex: 1;
-  font-size: 13.5px;
-  color: var(--ink);
-}
-
-/* Rodapé com preço */
-.sw-wc-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 10px 16px 12px;
-  border-top: 1px solid var(--line);
-  background: var(--bg);
-}
-.sw-wc-price {
-  font-family: 'Inter Tight', var(--sans);
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--wine);
-  letter-spacing: -.01em;
-}
-
-
-/* ── Botão Nova Pesquisa ─────────────────────────────────── */
-.sw-results-footer {
-  display: flex;
-  justify-content: center;
-  padding: 24px 0 8px;
-}
-.sw-btn-nova-pesquisa {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: 1px solid var(--line);
-  border-radius: 40px;
-  padding: 10px 24px;
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink-2);
-  letter-spacing: .03em;
-  cursor: pointer;
-  transition: border-color .2s, color .2s, background .2s;
-}
-.sw-btn-nova-pesquisa:hover {
-  border-color: var(--gold);
-  color: var(--gold);
-  background: rgba(168,132,61,.05);
-}
-.sw-btn-nova-pesquisa svg {
-  opacity: .6;
-  transition: opacity .2s, transform .3s;
-}
-.sw-btn-nova-pesquisa:hover svg {
-  opacity: 1;
-  transform: rotate(-30deg);
-}
