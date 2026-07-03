@@ -212,11 +212,8 @@ exports.handler = async (event) => {
       const files = await listFolder(folderId, token);
       const imageMap = {};
       for (const f of files) {
-        // Usa thumbnailLink se disponível (sem CORS), senão proxy via /api/gdrive?action=img&id=
-        const url = f.thumbnailLink
-          ? f.thumbnailLink.replace('=s220', '=s800')
-          : '/api/gdrive?action=img&id=' + f.id;
-        imageMap[normKey(f.name)] = url;
+        // Proxy autenticado como URL principal — mais confiável que thumbnailLink
+        imageMap[normKey(f.name)] = '/api/gdrive?action=img&id=' + f.id;
       }
       return reply(200, { images: imageMap, count: files.length });
     }
