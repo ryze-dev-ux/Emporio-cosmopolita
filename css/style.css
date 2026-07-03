@@ -287,7 +287,7 @@ body::before {
   color: var(--gold); padding-top: 1px;
 }
 .wc-val { color: var(--ink-2); }
-.wc-italic { font-style: italic; font-family: var(--serif); font-size: 13.5px; }
+.wc-italic { font-style: normal; font-family: var(--sans); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--gold); }
 
 /* Por que para você */
 .wc-why {
@@ -485,15 +485,21 @@ body::before {
 }
 .wc-line-val {
   flex: 1;
-  font-size: 13.5px;
-  color: var(--ink);
-  font-weight: 400;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--gold);
 }
 .wc-italic {
-  font-style: italic;
-  font-family: var(--serif);
-  font-size: 14px;
-  color: var(--ink-2);
+  font-style: normal;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--gold);
 }
 
 /* Frase custo-benefício */
@@ -576,17 +582,37 @@ body::before {
 
 /* Botão Voltar do wizard */
 .wz-back {
-  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 20px auto 0;
   background: none;
   border: none;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
   color: var(--ink-3);
   cursor: pointer;
-  padding: 4px 0;
-  transition: color .15s;
+  padding: 6px 12px;
+  transition: color .2s, opacity .2s;
+  opacity: .7;
 }
-.wz-back:hover { color: var(--ink); }
+.wz-back::before {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 1px;
+  background: currentColor;
+  transition: width .2s;
+}
+.wz-back:hover {
+  color: var(--gold);
+  opacity: 1;
+}
+.wz-back:hover::before { width: 24px; }
 
 /* ── Responsivo ─────────────────────────────────────────── */
 @media (max-width: 860px) {
@@ -656,3 +682,28 @@ body::before {
   left: 14px;
 }
 
+
+.wc-line-val {
+  flex: 1;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--gold);
+}
+.wc-italic {
+  font-style: normal;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--gold);
+}
+
+.sw-results-footer {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 8px;
+}
