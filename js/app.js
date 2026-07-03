@@ -781,7 +781,6 @@ window.ui = ui;
    ═══════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
   startNewSession({ silent: true });
-  document.getElementById('msgInput').focus();
   await auth.restoreSession();
   authUI.renderRailAuth();
   ui.injectImportBanner();
@@ -822,7 +821,6 @@ function startNewSession({ silent = false } = {}) {
   state.sessions.push({ id, title: 'Nova conversa', messages: state.history });
   renderOpener();
   renderThreadList();
-  if (!silent) document.getElementById('msgInput').focus();
 }
 
 function newChat() { startNewSession(); }
@@ -1291,55 +1289,11 @@ function renderOpener() {
 }
 
 function useSugg(el) {
-  document.getElementById('msgInput').value = el.querySelector('.prompt-text').textContent.trim();
-  sendMessage();
+
 }
 
-function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; }
 
-/* ── Envio ──────────────────────────────────────────────── */
-async function sendMessage() {
-  const input = document.getElementById('msgInput');
-  const text  = input.value.trim();
-  if (!text || state.thinking) return;
 
-  const op = document.getElementById('opener');
-  if (op) op.remove();
-
-  input.value = '';
-  input.style.height = 'auto';
-
-  state.history.push({ role: 'user', content: text });
-  appendMessage('user', text);
-
-  const session = state.sessions.find(s => s.id === state.currentId);
-  if (session && session.title === 'Nova conversa')
-    session.title = text.length > 44 ? text.slice(0, 44).trimEnd() + '…' : text;
-  renderThreadList();
-
-  state.thinking = true;
-  document.getElementById('sendBtn').disabled = true;
-  showTyping();
-
-  try {
-    const reply = await callApi();
-    removeTyping();
-    state.history.push({ role: 'assistant', content: reply });
-    appendMessage('assistant', reply);
-  } catch (err) {
-    removeTyping();
-    const msg = err.message && err.message.length < 200
-      ? 'Erro: ' + err.message
-      : 'Não consegui me conectar agora. Por favor, tente novamente em instantes.';
-    appendMessage('assistant', msg);
-    console.error('[emporio]', err);
-  } finally {
-    state.thinking = false;
-    document.getElementById('sendBtn').disabled = false;
-    document.getElementById('msgInput').focus();
-  }
-}
 
 async function callApi() {
   const recent = state.history.slice(-HISTORY_TURNS * 2);

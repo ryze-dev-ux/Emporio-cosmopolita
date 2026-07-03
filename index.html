@@ -72,28 +72,6 @@
       </header>
 
       <div class="thread" id="thread"></div>
-
-      <div class="composer-wrap">
-        <div class="composer">
-          <textarea
-            id="msgInput"
-            placeholder="Conte-me sobre o momento…"
-            onkeydown="handleKey(event)"
-            oninput="autoResize(this)"
-            rows="1"
-            autocomplete="off"
-            spellcheck="true"
-          ></textarea>
-          <button class="send" id="sendBtn" onclick="sendMessage()" aria-label="Enviar">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
-        </div>
-        <p class="composer-foot">Empório Cosmopolita · Cosmos</p>
-      </div>
     </main>
 
   </div><!-- /shell -->
