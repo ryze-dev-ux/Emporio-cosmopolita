@@ -1025,11 +1025,16 @@ const searchWizard = (() => {
     const preco    = fmtPrice(w);
     const why      = buildWhyText(w, label);
 
+    const cbLabel = label && label.includes('Custo') ? '💰 Custo-benefício' :
+                    label && label.includes('Médio')  ? '🥂 Preço médio'      :
+                    label && label.includes('Premium')? '✨ Premium'           : '';
+
     const infoLines = [
       w.type        ? `<div class="wc-line"><span class="wc-line-icon">🍷</span><span class="wc-line-label">Tipo</span><span class="wc-line-val">${esc(w.type)}</span></div>`        : '',
       w.grapes      ? `<div class="wc-line"><span class="wc-line-icon">🍇</span><span class="wc-line-label">Uva</span><span class="wc-line-val">${esc(w.grapes)}</span></div>`         : '',
       w.temperature ? `<div class="wc-line"><span class="wc-line-icon">🌡️</span><span class="wc-line-label">Temperatura</span><span class="wc-line-val">${esc(w.temperature)}</span></div>` : '',
-      w.pairing     ? `<div class="wc-line"><span class="wc-line-icon">🍽️</span><span class="wc-line-label">Harmoniza</span><span class="wc-line-val">${esc(w.pairing)}</span></div>`  : '',
+      w.pairing     ? `<div class="wc-line"><span class="wc-line-icon">🍽️</span><span class="wc-line-label">Harmoniza</span><span class="wc-line-val wc-italic">${esc(w.pairing)}</span></div>` : '',
+      w.tannins     ? `<div class="wc-line"><span class="wc-line-icon">🍾</span><span class="wc-line-label">Taninos</span><span class="wc-line-val">${esc(w.tannins)}</span></div>`     : '',
     ].filter(Boolean).join('');
 
     return `
@@ -1039,12 +1044,13 @@ const searchWizard = (() => {
           <div style="flex:1;min-width:0">
             <div class="wc-name">${esc(w.name)}</div>
             ${w.winery ? `<div class="wc-maker">${esc(w.winery)}</div>` : ''}
-            ${w.country ? `<div class="wc-country" style="display:flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;color:var(--ink-2)">${flagHtml}<span>${esc(w.country)}</span></div>` : ''}
+            ${w.country ? `<div class="wc-country" style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:13px;color:var(--ink-2)">${flagHtml}<span>${esc(w.country)}</span></div>` : ''}
+            ${cbLabel ? `<div class="wc-cb-flag">${cbLabel}</div>` : ''}
           </div>
         </div>
         ${infoLines ? `<div class="wc-lines">${infoLines}</div>` : ''}
         <div class="wc-footer">
-          ${why ? `<div class="wc-why-text">✦ ${why}</div>` : ''}
+          ${why ? `<div class="wc-why-text">✅ ${why}</div>` : ''}
           <span class="wc-price-tag">${preco}</span>
         </div>
       </div>`;

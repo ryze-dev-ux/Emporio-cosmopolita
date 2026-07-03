@@ -459,16 +459,16 @@ body::before {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  padding: 10px 20px;
+  padding: 11px 20px;
   border-bottom: 1px solid var(--line);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .wc-line:last-child { border-bottom: none; }
 
 .wc-line-icon {
-  font-size: 16px;
+  font-size: 17px;
   flex-shrink: 0;
-  width: 22px;
+  width: 24px;
   text-align: center;
   line-height: 1;
   margin-top: 1px;
