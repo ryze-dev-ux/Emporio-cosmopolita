@@ -77,7 +77,7 @@ async function downloadFile(id, token) {
 
 async function listFolder(id, token) {
   const q  = encodeURIComponent("'"+id+"' in parents and trashed=false");
-  const fl = encodeURIComponent('files(id,name)');
+  const fl = encodeURIComponent('files(id,name,thumbnailLink,mimeType)');
   const buf = await driveGet('/drive/v3/files?q='+q+'&fields='+fl+'&pageSize=500', token);
   return JSON.parse(buf.toString()).files || [];
 }
@@ -212,9 +212,34 @@ exports.handler = async (event) => {
       const files = await listFolder(folderId, token);
       const imageMap = {};
       for (const f of files) {
-        imageMap[normKey(f.name)] = 'https://drive.google.com/uc?export=view&id='+f.id;
+        // Usa thumbnailLink se disponível (sem CORS), senão proxy via /api/gdrive?action=img&id=
+        const url = f.thumbnailLink
+          ? f.thumbnailLink.replace('=s220', '=s800')
+          : '/api/gdrive?action=img&id=' + f.id;
+        imageMap[normKey(f.name)] = url;
       }
       return reply(200, { images: imageMap, count: files.length });
+    }
+
+    // Proxy de imagem — serve o arquivo do Drive autenticado
+    if (action === 'img') {
+      const fileId = event.queryStringParameters && event.queryStringParameters.id;
+      if (!fileId) return reply(400, { error: 'id obrigatorio' });
+      try {
+        const buf = await driveGet('/drive/v3/files/'+fileId+'?alt=media', token);
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'image/jpeg',
+            'Cache-Control': 'public, max-age=86400',
+            'Access-Control-Allow-Origin': '*',
+          },
+          body: buf.toString('base64'),
+          isBase64Encoded: true,
+        };
+      } catch(e) {
+        return reply(404, { error: 'imagem nao encontrada' });
+      }
     }
 
     return reply(400, { error:'action invalida. Use: catalog, debug ou images' });

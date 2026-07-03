@@ -1024,7 +1024,8 @@ const searchWizard = (() => {
     try { imgUrl = wineImageUrl(w.name); } catch {}
 
     const imgEl = imgUrl
-      ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="wc-bottle-img" loading="lazy" onerror="this.style.display='none'">`
+      ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="wc-bottle-img" loading="lazy"
+           onerror="if(!this.dataset.tried){this.dataset.tried=1;const id=this.dataset.id;if(id){this.src='/api/gdrive?action=img&id='+id;}else{this.style.display='none';}}else{this.style.display='none';}">`
       : `<div class="wc-bottle-ph" data-wine="${esc(w.name)}">🍷</div>`;
 
     const cc = COUNTRY_CC[norm(w.country || '')];
@@ -1138,7 +1139,20 @@ const searchWizard = (() => {
           img.alt = el.dataset.wine;
           img.className = 'wc-bottle-img';
           img.loading = 'lazy';
-          img.onerror = function() { this.style.display = 'none'; };
+          img.onerror = function() {
+            if (!this.dataset.tried) {
+              // Tenta proxy como fallback
+              this.dataset.tried = '1';
+              const proxyUrl = '/api/gdrive?action=img&id=' + encodeURIComponent(url.split('id=')[1] || '');
+              if (proxyUrl !== '/api/gdrive?action=img&id=') {
+                this.src = proxyUrl;
+              } else {
+                this.style.display = 'none';
+              }
+            } else {
+              this.style.display = 'none';
+            }
+          };
           el.replaceWith(img);
         }
       });
