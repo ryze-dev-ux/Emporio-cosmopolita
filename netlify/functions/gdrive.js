@@ -83,12 +83,8 @@ async function listFolder(id, token) {
 }
 
 function normKey(s) {
-  return s.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/\.(jpg|jpeg|png|webp)$/i,'')
-    .replace(/[^a-z0-9]/g,'_')
-    .replace(/_+/g,'_')
-    .replace(/^_|_$/g,'');
+  // Remove extensão e converte para lowercase — preserva espaços e acentos para match exato
+  return s.replace(/\.(jpg|jpeg|png|webp|gif)$/i, '').toLowerCase().trim();
 }
 
 function parseXlsx(buf) {

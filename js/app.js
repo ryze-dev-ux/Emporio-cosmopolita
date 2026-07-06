@@ -1339,17 +1339,23 @@ function appendMessage(role, content, { instant = false } = {}) {
 
 /* ── Imagem do vinho via Drive ──────────────────────────── */
 function normWineName(name) {
-  return String(name).toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+  // Mesmo padrão do gdrive.js: só lowercase + trim
+  return String(name).toLowerCase().trim();
 }
 function wineImageUrl(name) {
   const map = window._driveImages || {};
-  const key = normWineName(name);
-  if (map[key]) return map[key];
-  // Busca parcial (primeiros 25 chars)
-  const k2 = Object.keys(map).find(k => k.startsWith(key.slice(0,25)));
-  return k2 ? map[k2] : null;
+  // 1. Match exato (nome do vinho == nome do arquivo sem extensão)
+  const exact = normWineName(name);
+  if (map[exact]) return map[exact];
+  // 2. Fallback: normaliza acentos para cobrir pequenas divergências
+  const norm = exact.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const normMatch = Object.keys(map).find(k =>
+    k.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === norm
+  );
+  if (normMatch) return map[normMatch];
+  // 3. Fallback parcial: começa com os primeiros 20 chars
+  const partial = Object.keys(map).find(k => k.startsWith(exact.slice(0, 20)));
+  return partial ? map[partial] : null;
 }
 
 function formatReply(raw) {
