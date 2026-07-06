@@ -669,29 +669,28 @@ body::before {
 }
 .wc-img-col {
   flex-shrink: 0;
-  width: 130px;
+  width: 140px;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  padding: 5%;
+  padding: 10px 8px;
   border-right: 1px solid var(--line);
 }
 .wc-bottle-img {
-  width: 90%;
-  height: 100%;
-  min-height: 220px;
+  width: 124px;
+  height: 280px;
   object-fit: contain;
   object-position: center;
   border-radius: 4px;
   display: block;
 }
 .wc-bottle-ph {
-  width: 90%;
-  min-height: 220px;
+  width: 124px;
+  height: 280px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 52px;
   opacity: .3;
   background: var(--bg);
   border-radius: 4px;
