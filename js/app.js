@@ -1100,15 +1100,22 @@ const searchWizard = (() => {
       return;
     }
 
-    // Seleciona 3 vinhos: custo-benefício, preço médio e mais caro
+    // Divide em 3 faixas e sorteia 1 de cada — garante variedade a cada pesquisa
     const sorted = [...wines].sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
-    const cb   = sorted[0];
-    const med  = sorted[Math.floor((sorted.length - 1) / 2)];
-    const caro = sorted[sorted.length - 1];
+    function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    const third = Math.ceil(sorted.length / 3);
+    const faixaCb   = sorted.slice(0, third);
+    const faixaMed  = sorted.slice(third, third * 2);
+    const faixaCaro = sorted.slice(third * 2);
+
+    const cb   = pickRandom(faixaCb);
+    const med  = faixaMed.length  ? pickRandom(faixaMed)  : null;
+    const caro = faixaCaro.length ? pickRandom(faixaCaro) : null;
 
     // Evita repetição se lista tiver poucos vinhos
     const trio = [cb];
-    if (med && med.id !== cb.id) trio.push(med);
+    if (med  && med.id  !== cb.id) trio.push(med);
     if (caro && caro.id !== cb.id && caro.id !== (med?.id)) trio.push(caro);
 
     const labels = ['💚 Custo-Benefício', '🥂 Preço Médio', '✨ Premium'];
@@ -1339,21 +1346,33 @@ function appendMessage(role, content, { instant = false } = {}) {
 
 /* ── Imagem do vinho via Drive ──────────────────────────── */
 function normWineName(name) {
-  // Mesmo padrão do gdrive.js: só lowercase + trim
   return String(name).toLowerCase().trim();
 }
 function wineImageUrl(name) {
   const map = window._driveImages || {};
-  // 1. Match exato (nome do vinho == nome do arquivo sem extensão)
   const exact = normWineName(name);
+
+  // 1. Match exato
   if (map[exact]) return map[exact];
-  // 2. Fallback: normaliza acentos para cobrir pequenas divergências
+
+  // 2. Arquivo pode ter sufixo extra (ex: " - 750ml", " - 1,5l", " 750ml")
+  //    Procura chave do mapa que COMEÇA com o nome do vinho
+  const startMatch = Object.keys(map).find(k => k.startsWith(exact));
+  if (startMatch) return map[startMatch];
+
+  // 3. Nome do vinho pode ter sufixo que o arquivo não tem
+  //    Procura nome do vinho que COMEÇA com a chave do mapa
+  const reverseMatch = Object.keys(map).find(k => exact.startsWith(k));
+  if (reverseMatch) return map[reverseMatch];
+
+  // 4. Normaliza acentos dos dois lados
   const norm = exact.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const normMatch = Object.keys(map).find(k =>
+  const accentMatch = Object.keys(map).find(k =>
     k.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === norm
   );
-  if (normMatch) return map[normMatch];
-  // 3. Fallback parcial: começa com os primeiros 20 chars
+  if (accentMatch) return map[accentMatch];
+
+  // 5. Parcial: primeiros 20 chars
   const partial = Object.keys(map).find(k => k.startsWith(exact.slice(0, 20)));
   return partial ? map[partial] : null;
 }
