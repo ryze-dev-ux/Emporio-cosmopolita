@@ -1045,16 +1045,16 @@ const searchWizard = (() => {
 
     return `
       <div class="wine">
-        <div class="wc-header" style="display:flex;align-items:center;gap:14px;">
-          ${imgEl}
-          <div style="flex:1;min-width:0">
+        <div class="wc-body">
+          <div class="wc-img-col">${imgEl}</div>
+          <div class="wc-info-col">
             <div class="wc-name">${esc(w.name)}</div>
             ${w.winery ? `<div class="wc-maker">${esc(w.winery)}</div>` : ''}
-            ${w.country ? `<div class="wc-country" style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:13px;color:var(--ink-2)">${flagHtml}<span>${esc(w.country)}</span></div>` : ''}
+            ${w.country ? `<div class="wc-country">${flagHtml}<span>${esc(w.country)}</span></div>` : ''}
             ${cbLabel ? `<div class="wc-cb-flag">${cbLabel}</div>` : ''}
+            ${infoLines ? `<div class="wc-lines">${infoLines}</div>` : ''}
           </div>
         </div>
-        ${infoLines ? `<div class="wc-lines">${infoLines}</div>` : ''}
         <div class="wc-footer">
           ${why ? `<div class="wc-why-text">✅ ${why}</div>` : ''}
           <span class="wc-price-tag">${preco}</span>
