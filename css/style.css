@@ -50,8 +50,8 @@ body::before {
 /* ── Layout ─────────────────────────────────────────────── */
 .shell {
   position: relative; z-index: 1;
-  display: grid;
-  grid-template-columns: 272px 1fr;
+  display: block;
+  width: 100%;
   height: 100vh;
   height: 100dvh;
 }
