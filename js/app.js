@@ -884,6 +884,7 @@ const searchWizard = (() => {
   const STEP_UVA = {
     key: 'uva', label: 'Tipo de Uva', icon: '🍇',
     options: [
+      { label: 'Sem preferência', any: true },
       { label: 'Blend de Uvas'      },
       { label: 'Cabernet Sauvignon' },
       { label: 'Malbec'             },
@@ -935,7 +936,7 @@ const searchWizard = (() => {
 
   /* ── Fluxos por tipo de bebida ─────────────────────────────────────── */
   const FLOW_VINHO   = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA, STEP_PAIS, STEP_HARMONIZACAO];
-  const FLOW_ESPUMANTE = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_UVA, STEP_PAIS, STEP_HARMONIZACAO];
+  const FLOW_ESPUMANTE = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_PAIS, STEP_HARMONIZACAO];
 
   /* ── Retorna o fluxo ativo baseado na resposta de "tipo" ───────────── */
   function getFlow() {
@@ -996,8 +997,9 @@ const searchWizard = (() => {
         const es = norm(ans.estilo);
         if (!wt.includes(es)) return false;
       }
-      // Uva — só filtra se o vinho tem o campo preenchido
-      if (ans.uva && norm(ans.uva) !== 'blend de uvas' && w.grapes) {
+      // Uva — ignora se "Sem preferência" (any:true) ou campo vazio
+      const uvaAny = STEP_UVA.options.find(o => o.label === ans.uva)?.any;
+      if (ans.uva && !uvaAny && norm(ans.uva) !== 'blend de uvas' && w.grapes) {
         const wg = norm(w.grapes);
         const terms = norm(ans.uva).replace('shiraz  syrah','syrah shiraz').split(' ').filter(t => t.length > 2);
         if (!terms.some(t => wg.includes(t))) return false;
@@ -1279,6 +1281,11 @@ const searchWizard = (() => {
       const a5 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null, estilo: null, tipo: null });
       result = applyFilters(wines, a5, false);
       relaxNote = 'Sugestões disponíveis na faixa de preço escolhida.';
+    }
+    if (result.length < 3) {
+      // 6. Remove todos os filtros — retorna qualquer vinho do catálogo
+      result = wines.filter(w => (w.cost_value || 0) > 1);
+      relaxNote = 'Aqui estão nossas sugestões para você.';
     }
 
     // Limita a 12 cards e ordena por custo-benefício
