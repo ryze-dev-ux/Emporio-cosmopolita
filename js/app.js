@@ -799,20 +799,6 @@ document.addEventListener('DOMContentLoaded', async () => {
    CÓDIGO ORIGINAL — PRESERVADO
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Toggle da barra lateral ─────────────────────────────── */
-function toggleRail() {
-  const shell     = document.getElementById('shell');
-  const icon      = document.getElementById('railToggleIcon');
-  const collapsed = shell.classList.toggle('rail-collapsed');
-
-  if (collapsed) {
-    icon.innerHTML = '<polyline points="13 17 18 12 13 7"/><line x1="6" y1="12" x2="18" y2="12"/>';
-    document.getElementById('railToggle').title = 'Expandir menu';
-  } else {
-    icon.innerHTML = '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/>';
-    document.getElementById('railToggle').title = 'Recolher menu';
-  }
-}
 
 function startNewSession({ silent = false } = {}) {
   const id = Date.now();
@@ -857,86 +843,109 @@ function renderThreadList() {
 const searchWizard = (() => {
 
   /* ── Etapas ────────────────────────────────────────────────────────── */
-  const STEPS = [
-    {
-      key: 'price', label: 'Faixa de Preço', icon: '💰',
-      options: [
-        { label: 'Até R$ 80',        min: 0,   max: 80        },
-        { label: 'R$ 80 a R$ 130',   min: 80,  max: 130       },
-        { label: 'R$ 130 a R$ 200',  min: 130, max: 200       },
-        { label: 'R$ 200 a R$ 250',  min: 200, max: 250       },
-        { label: 'R$ 250 a R$ 300',  min: 250, max: 300       },
-        { label: 'Acima de R$ 300',  min: 300, max: Infinity  },
-      ],
-    },
-    {
-      key: 'tipo', label: 'Tipo de Vinho', icon: '🍷',
-      options: [
-        { label: 'Vinho Tinto'  },
-        { label: 'Vinho Branco' },
-        { label: 'Espumante'    },
-      ],
-    },
-    {
-      key: 'estilo', label: 'Estilo', icon: '✨',
-      options: [
-        { label: 'Suave'    },
-        { label: 'Meio Seco'},
-        { label: 'Seco'     },
-      ],
-    },
-    {
-      key: 'uva', label: 'Tipo de Uva', icon: '🍇',
-      options: [
-        { label: 'Blend de Uvas'      },
-        { label: 'Cabernet Sauvignon' },
-        { label: 'Malbec'             },
-        { label: 'Carmenere'          },
-        { label: 'Merlot'             },
-        { label: 'Shiraz / Syrah'     },
-        { label: 'Tannat'             },
-        { label: 'Viognier'           },
-        { label: 'Sangiovese'         },
-        { label: 'Sauvignon Blanc'    },
-        { label: 'Gewürztraminer'     },
-        { label: 'Chardonnay'         },
-        { label: 'Savagnin Blanc'     },
-        { label: 'Cabernet Franc'     },
-        { label: 'Petit Verdot'       },
-        { label: 'Pinotage'           },
-        { label: 'Pinot Noir'         },
-        { label: 'Pinot Grigio'       },
-      ],
-    },
-    {
-      key: 'pais', label: 'País de Origem', icon: '🌍',
-      options: [
-        { label: 'Sem preferência', any: true },
-        { label: 'Argentina',    flag: 'ar' },
-        { label: 'Chile',        flag: 'cl' },
-        { label: 'Brasil',       flag: 'br' },
-        { label: 'França',       flag: 'fr' },
-        { label: 'Itália',       flag: 'it' },
-        { label: 'Portugal',     flag: 'pt' },
-        { label: 'Espanha',      flag: 'es' },
-        { label: 'Uruguai',      flag: 'uy' },
-        { label: 'África do Sul',flag: 'za' },
-        { label: 'Austrália',    flag: 'au' },
-        { label: 'Estados Unidos',flag:'us' },
-      ],
-    },
-    {
-      key: 'harmonizacao', label: 'Harmonização', icon: '🍽️',
-      options: [
-        { label: 'Carnes Vermelhas'      },
-        { label: 'Carnes Brancas'        },
-        { label: 'Massas e Risotos'      },
-        { label: 'Queijos e Frios'       },
-        { label: 'Peixes e Frutos do Mar'},
-        { label: 'Sem preferência', any: true },
-      ],
-    },
-  ];
+  /* ── Etapas base (compartilhadas) ─────────────────────────────────── */
+  const STEP_PRICE = {
+    key: 'price', label: 'Faixa de Preço', icon: '💰',
+    options: [
+      { label: 'Até R$ 80',        min: 0,   max: 80        },
+      { label: 'R$ 80 a R$ 130',   min: 80,  max: 130       },
+      { label: 'R$ 130 a R$ 200',  min: 130, max: 200       },
+      { label: 'R$ 200 a R$ 250',  min: 200, max: 250       },
+      { label: 'R$ 250 a R$ 300',  min: 250, max: 300       },
+      { label: 'Acima de R$ 300',  min: 300, max: Infinity  },
+    ],
+  };
+  const STEP_TIPO = {
+    key: 'tipo', label: 'Tipo de Bebida', icon: '🍷',
+    options: [
+      { label: 'Vinho Tinto'  },
+      { label: 'Vinho Branco' },
+      { label: 'Espumante'    },
+    ],
+  };
+  const STEP_ESTILO_VINHO = {
+    key: 'estilo', label: 'Estilo', icon: '✨',
+    options: [
+      { label: 'Suave'    },
+      { label: 'Meio Seco'},
+      { label: 'Seco'     },
+    ],
+  };
+  const STEP_ESTILO_ESPUMANTE = {
+    key: 'estilo', label: 'Estilo', icon: '✨',
+    options: [
+      { label: 'Brut'      },
+      { label: 'Demi-sec'  },
+      { label: 'Prosecco'  },
+      { label: 'Moscatel'  },
+      { label: 'Seco'      },
+    ],
+  };
+  const STEP_UVA = {
+    key: 'uva', label: 'Tipo de Uva', icon: '🍇',
+    options: [
+      { label: 'Blend de Uvas'      },
+      { label: 'Cabernet Sauvignon' },
+      { label: 'Malbec'             },
+      { label: 'Carmenere'          },
+      { label: 'Merlot'             },
+      { label: 'Shiraz / Syrah'     },
+      { label: 'Tannat'             },
+      { label: 'Viognier'           },
+      { label: 'Sangiovese'         },
+      { label: 'Sauvignon Blanc'    },
+      { label: 'Gewürztraminer'     },
+      { label: 'Chardonnay'         },
+      { label: 'Savagnin Blanc'     },
+      { label: 'Cabernet Franc'     },
+      { label: 'Petit Verdot'       },
+      { label: 'Pinotage'           },
+      { label: 'Pinot Noir'         },
+      { label: 'Pinot Grigio'       },
+    ],
+  };
+  const STEP_PAIS = {
+    key: 'pais', label: 'País de Origem', icon: '🌍',
+    options: [
+      { label: 'Sem preferência', any: true },
+      { label: 'Argentina',    flag: 'ar' },
+      { label: 'Chile',        flag: 'cl' },
+      { label: 'Brasil',       flag: 'br' },
+      { label: 'França',       flag: 'fr' },
+      { label: 'Itália',       flag: 'it' },
+      { label: 'Portugal',     flag: 'pt' },
+      { label: 'Espanha',      flag: 'es' },
+      { label: 'Uruguai',      flag: 'uy' },
+      { label: 'África do Sul',flag: 'za' },
+      { label: 'Austrália',    flag: 'au' },
+      { label: 'Estados Unidos',flag:'us' },
+    ],
+  };
+  const STEP_HARMONIZACAO = {
+    key: 'harmonizacao', label: 'Harmonização', icon: '🍽️',
+    options: [
+      { label: 'Carnes Vermelhas'      },
+      { label: 'Carnes Brancas'        },
+      { label: 'Massas e Risotos'      },
+      { label: 'Queijos e Frios'       },
+      { label: 'Peixes e Frutos do Mar'},
+      { label: 'Sem preferência', any: true },
+    ],
+  };
+
+  /* ── Fluxos por tipo de bebida ─────────────────────────────────────── */
+  const FLOW_VINHO   = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA, STEP_PAIS, STEP_HARMONIZACAO];
+  const FLOW_ESPUMANTE = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_UVA, STEP_PAIS, STEP_HARMONIZACAO];
+
+  /* ── Retorna o fluxo ativo baseado na resposta de "tipo" ───────────── */
+  function getFlow() {
+    const tipo = st.answers.tipo || '';
+    if (tipo === 'Espumante') return FLOW_ESPUMANTE;
+    return FLOW_VINHO;
+  }
+
+  // STEPS é sempre o fluxo ativo — usado por todo o resto do wizard
+  const STEPS = FLOW_VINHO; // placeholder inicial; getFlow() é usado em runtime
 
   /* ── Estado ────────────────────────────────────────────────────────── */
   let st = { step: 0, answers: {} };
@@ -994,11 +1003,11 @@ const searchWizard = (() => {
         if (!terms.some(t => wg.includes(t))) return false;
       }
       // País (ignorado se relaxado)
-      if (!relaxed && ans.pais && !STEPS[4].options.find(o => o.label === ans.pais)?.any) {
+      if (!relaxed && ans.pais && !STEP_PAIS.options.find(o => o.label === ans.pais)?.any) {
         if (norm(w.country || '') !== norm(ans.pais)) return false;
       }
       // Harmonização — só filtra se o vinho tem pairing preenchido
-      if (!relaxed && ans.harmonizacao && !STEPS[5].options.find(o => o.label === ans.harmonizacao)?.any && w.pairing) {
+      if (!relaxed && ans.harmonizacao && !STEP_HARMONIZACAO.options.find(o => o.label === ans.harmonizacao)?.any && w.pairing) {
         const wp = norm(w.pairing);
         const hterms = norm(ans.harmonizacao).split(' e ').flatMap(t => t.split(' ')).filter(t => t.length > 3);
         if (!hterms.some(t => wp.includes(t))) return false;
@@ -1175,10 +1184,10 @@ const searchWizard = (() => {
   /* ── Renderiza etapa ───────────────────────────────────────────────── */
   function renderStep() {
     const thread = document.getElementById('thread');
-    const step   = STEPS[st.step];
+    const step   = getFlow()[st.step];
     if (!step) { finish(); return; }
 
-    const pct = Math.round((st.step / STEPS.length) * 100);
+    const pct = Math.round((st.step / getFlow().length) * 100);
 
     const cards = step.options.map(opt => {
       const iconHtml = opt.flag
@@ -1215,7 +1224,7 @@ const searchWizard = (() => {
         else st.answers[step.key] = label;
 
         st.step++;
-        if (st.step >= STEPS.length) { finish(); return; }
+        if (st.step >= getFlow().length) { finish(); return; }
         else renderStep();
       });
     });
