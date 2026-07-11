@@ -1049,9 +1049,7 @@ const searchWizard = (() => {
     const preco    = fmtPrice(w);
     const why      = buildWhyText(w, label);
 
-    const cbLabel = label && label.includes('Custo') ? '💰 Custo-benefício' :
-                    label && label.includes('Médio')  ? '🥂 Preço médio'      :
-                    label && label.includes('Premium')? '✨ Premium'           : '';
+    const cbLabel = '';
 
     const infoLines = [
       w.type        ? `<div class="wc-line"><span class="wc-line-icon">🍷</span><span class="wc-line-label">Tipo</span><span class="wc-line-val">${esc(w.type)}</span></div>`        : '',
@@ -1069,7 +1067,7 @@ const searchWizard = (() => {
             <div class="wc-name">${esc(w.name)}</div>
             ${w.winery ? `<div class="wc-maker">${esc(w.winery)}</div>` : ''}
             ${w.country ? `<div class="wc-country">${flagHtml}<span>${esc(w.country)}</span></div>` : ''}
-            ${cbLabel ? `<div class="wc-cb-flag">${cbLabel}</div>` : ''}
+
             ${infoLines ? `<div class="wc-lines">${infoLines}</div>` : ''}
           </div>
         </div>
