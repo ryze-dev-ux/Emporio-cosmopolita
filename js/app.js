@@ -874,11 +874,13 @@ const searchWizard = (() => {
   const STEP_ESTILO_ESPUMANTE = {
     key: 'estilo', label: 'Estilo', icon: '✨',
     options: [
-      { label: 'Brut'      },
-      { label: 'Demi-sec'  },
-      { label: 'Prosecco'  },
-      { label: 'Moscatel'  },
-      { label: 'Seco'      },
+      { label: 'Sem preferência', any: true },
+      { label: 'Brut'            },
+      { label: 'Demi-sec'        },
+      { label: 'Moscatel'        },
+      { label: 'Suave'           },
+      { label: 'Rosé'            },
+      { label: 'Seco'            },
     ],
   };
   const STEP_UVA = {
@@ -996,17 +998,11 @@ const searchWizard = (() => {
       if (ans.estilo && w.type) {
         const wt = norm(w.type);
         const es = norm(ans.estilo);
-        // "Seco" é genérico — não filtra para evitar falso negativo
-        // Ex: "Espumante Brut" não contém "seco" mas é seco
-        const isEspumante = norm(ans.tipo || '') === 'espumante';
-        if (isEspumante) {
-          // Para espumantes, busca o estilo específico no campo type
-          // ex: estilo "Brut" → type "Espumante Brut" → match
-          // estilo "Seco" → aceita qualquer espumante seco (não filtra)
-          if (es !== 'seco' && !wt.includes(es)) return false;
-        } else {
-          if (!wt.includes(es)) return false;
-        }
+        const estiloAny = (ans.tipo === 'Espumante'
+          ? STEP_ESTILO_ESPUMANTE
+          : STEP_ESTILO_VINHO
+        ).options.find(o => o.label === ans.estilo)?.any;
+        if (!estiloAny && !wt.includes(es)) return false;
       }
       // Uva — ignora se "Sem preferência" (any:true) ou campo vazio
       const uvaAny = STEP_UVA.options.find(o => o.label === ans.uva)?.any;
@@ -1254,8 +1250,19 @@ const searchWizard = (() => {
     const thread = document.getElementById('thread');
     thread.innerHTML = '<div class="sw-wrap" style="text-align:center;padding:40px"><p style="color:var(--ink-2)">🍷 Buscando vinhos...</p></div>';
 
-    // Usa catálogo já carregado no boot — não faz novo fetch
+    // Usa catálogo em memória — se vazio, busca direto da API
     let catalog = winesDB.getCatalog();
+    if (!catalog || !catalog.wines || !catalog.wines.length) {
+      try {
+        const res = await fetch('/api/gdrive?action=catalog');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.wines && data.wines.length) {
+            catalog = data;
+          }
+        }
+      } catch(e) {}
+    }
     const wines = (catalog && catalog.wines && catalog.wines.length) ? catalog.wines : [];
 
     // Tenta com todos os filtros
