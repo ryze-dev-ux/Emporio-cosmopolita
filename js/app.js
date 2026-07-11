@@ -1145,32 +1145,13 @@ const searchWizard = (() => {
       return;
     }
 
-    // Divide em 3 faixas e sorteia 1 de cada — garante variedade
+    // Exibe todos os vinhos que satisfazem os filtros, ordenados por preço
     const sorted = [...wines].sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
-    function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-    const third    = Math.max(1, Math.ceil(sorted.length / 3));
-    const faixaCb  = sorted.slice(0, third);
-    const faixaMed = sorted.slice(third, third * 2);
-    const faixaCaro= sorted.slice(third * 2);
-
-    const cb   = pickRandom(faixaCb);
-    const med  = faixaMed.length  ? pickRandom(faixaMed)  : null;
-    const caro = faixaCaro.length ? pickRandom(faixaCaro) : null;
-
-    // Monta trio sem repetições
-    const seen = new Set();
-    const trio = [];
-    for (const w of [cb, med, caro]) {
-      if (w && !seen.has(w.id)) { trio.push(w); seen.add(w.id); }
-    }
-
-    const labels = ['💚 Custo-Benefício', '🥂 Preço Médio', '✨ Premium'];
-
-    const cardsHtml = trio.map((w, i) => renderCard(w, labels[i])).join('');
+    const cardsHtml = sorted.map(w => renderCard(w)).join('');
 
     thread.innerHTML = `
       <div class="sw-wrap">
+        <p class="sw-results-count">${sorted.length} resultado${sorted.length !== 1 ? 's' : ''} encontrado${sorted.length !== 1 ? 's' : ''}</p>
         <div class="sw-trio" id="swCards">${cardsHtml}</div>
         <div class="sw-results-footer">
           <button class="wz-back" id="swRestart">Nova pesquisa</button>
