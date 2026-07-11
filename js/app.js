@@ -1380,34 +1380,40 @@ function appendMessage(role, content, { instant = false } = {}) {
 
 /* ── Imagem do vinho via Drive ──────────────────────────── */
 function normWineName(name) {
-  return String(name).toLowerCase().trim();
+  // Mesmo padrão do normKey no gdrive.js
+  return String(name).toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
 }
 function wineImageUrl(name) {
   const map = window._driveImages || {};
-  const exact = normWineName(name);
+  const deaccent = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const toKey = s => deaccent(String(s).toLowerCase().trim())
+    .replace(/[^a-z0-9]/g, '_').replace(/_+/g,'_').replace(/^_|_$/g,'');
 
-  // 1. Match exato
-  if (map[exact]) return map[exact];
+  // Nome sem sufixo de volume (" - 750ml", " - 375ml", etc.)
+  const nameNoVol = String(name).trim().replace(/\s*-?\s*\d+\s*(ml|l|litros?)\s*$/i, '').trim();
+  const keyFull = toKey(name);
+  const keyBase = toKey(nameNoVol);
 
-  // 2. Arquivo pode ter sufixo extra (ex: " - 750ml", " - 1,5l", " 750ml")
-  //    Procura chave do mapa que COMEÇA com o nome do vinho
-  const startMatch = Object.keys(map).find(k => k.startsWith(exact));
+  // 1. Match exato nome completo
+  if (map[keyFull]) return map[keyFull];
+
+  // 2. Match sem volume
+  if (map[keyBase]) return map[keyBase];
+
+  // 3. Chave começa com keyBase (arquivo tem sufixo extra como "_750ml")
+  const startMatch = Object.keys(map).find(k => k.startsWith(keyBase + '_'));
   if (startMatch) return map[startMatch];
 
-  // 3. Nome do vinho pode ter sufixo que o arquivo não tem
-  //    Procura nome do vinho que COMEÇA com a chave do mapa
-  const reverseMatch = Object.keys(map).find(k => exact.startsWith(k));
+  // 4. keyBase começa com chave (chave é prefixo)
+  const reverseMatch = Object.keys(map).find(k => keyBase.startsWith(k) && k.length > 10);
   if (reverseMatch) return map[reverseMatch];
 
-  // 4. Normaliza acentos dos dois lados
-  const norm = exact.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const accentMatch = Object.keys(map).find(k =>
-    k.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === norm
-  );
-  if (accentMatch) return map[accentMatch];
-
-  // 5. Parcial: primeiros 20 chars
-  const partial = Object.keys(map).find(k => k.startsWith(exact.slice(0, 20)));
+  // 5. Parcial primeiros 18 chars
+  const partial = Object.keys(map).find(k => k.startsWith(keyBase.slice(0, 18)));
   return partial ? map[partial] : null;
 }
 
