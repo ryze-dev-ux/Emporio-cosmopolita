@@ -187,14 +187,36 @@ exports.handler = async (event) => {
       if (action === 'debug') {
         const XLSX = require('xlsx');
         const wb   = XLSX.read(buf, { type:'buffer' });
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, defval:null });
+        const shName = wb.SheetNames.find(n => /somente/i.test(n)) || wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[shName], { header:1, defval:null });
+        const hIdx = rows.findIndex(r => r && r.some(c => /produto/i.test(String(c||''))));
+        const headers = rows[hIdx] || [];
+        const iNome  = headers.findIndex(h => /produto/i.test(String(h||'')));
+        const iTipo  = headers.findIndex(h => /^tipo$/i.test(String(h||'').trim()));
+        const iPreco = headers.findIndex(h => /pre/i.test(String(h||'')));
+        const iQty   = headers.findIndex(h => /qtd/i.test(String(h||'')));
+        // Busca espumantes
+        const espRows = [];
+        for (let i = hIdx+1; i < rows.length; i++) {
+          const r = rows[i];
+          if (!r) continue;
+          const tipo = String(r[iTipo]||'').toLowerCase();
+          const nome = String(r[iNome]||'').toLowerCase();
+          if (tipo.includes('espumante')||tipo.includes('brut')||tipo.includes('prosecco')||nome.includes('espumante')||nome.includes('brut')) {
+            espRows.push({ row: i, nome: r[iNome], tipo: r[iTipo], preco: r[iPreco], qty: r[iQty] });
+            if (espRows.length >= 8) break;
+          }
+        }
         return reply(200, {
           sheets:  wb.SheetNames,
+          sheetUsed: shName,
           row0:    rows[0],
           row1:    rows[1],
           row2:    rows[2],
           total:   rows.length,
+          hIdx:    hIdx,
           bufSize: buf.length,
+          espumantes: espRows,
         });
       }
 
