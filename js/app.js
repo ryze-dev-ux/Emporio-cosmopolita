@@ -991,11 +991,22 @@ const searchWizard = (() => {
         const keyword = map[norm(ans.tipo)] || norm(ans.tipo).replace('vinho ', '');
         if (!wt.startsWith(keyword) && !wt.includes(keyword)) return false;
       }
-      // Estilo — "Seco", "Suave", "Meio Seco" — busca no campo type
+      // Estilo — para vinhos: "Seco", "Suave", "Meio Seco" no campo type
+      //         para espumantes: "Brut", "Demi-sec", "Prosecco", "Moscatel", "Seco"
       if (ans.estilo && w.type) {
         const wt = norm(w.type);
         const es = norm(ans.estilo);
-        if (!wt.includes(es)) return false;
+        // "Seco" é genérico — não filtra para evitar falso negativo
+        // Ex: "Espumante Brut" não contém "seco" mas é seco
+        const isEspumante = norm(ans.tipo || '') === 'espumante';
+        if (isEspumante) {
+          // Para espumantes, busca o estilo específico no campo type
+          // ex: estilo "Brut" → type "Espumante Brut" → match
+          // estilo "Seco" → aceita qualquer espumante seco (não filtra)
+          if (es !== 'seco' && !wt.includes(es)) return false;
+        } else {
+          if (!wt.includes(es)) return false;
+        }
       }
       // Uva — ignora se "Sem preferência" (any:true) ou campo vazio
       const uvaAny = STEP_UVA.options.find(o => o.label === ans.uva)?.any;
@@ -1104,7 +1115,7 @@ const searchWizard = (() => {
     if (!wines.length) {
       thread.innerHTML = `
         <div class="sw-wrap" style="text-align:center;padding:48px 0">
-          <p style="color:var(--ink-2);font-size:15px;margin-bottom:20px">Nenhum vinho encontrado na faixa selecionada.</p>
+          <p style="color:var(--ink-2);font-size:15px;margin-bottom:20px">${st.answers.tipo === 'Espumante' ? 'Nenhum espumante encontrado na faixa selecionada.' : 'Nenhum vinho encontrado na faixa selecionada.'}</p>
           <button class="wz-back" id="swRestart">Nova pesquisa</button>
         </div>`;
       document.getElementById('swRestart').addEventListener('click', start);
