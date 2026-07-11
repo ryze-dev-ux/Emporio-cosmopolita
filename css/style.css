@@ -439,7 +439,7 @@ body::before {
 .wc-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 14px;
   padding: 12px 20px 14px;
   border-top: 1px solid var(--line);
@@ -452,10 +452,9 @@ body::before {
   line-height: 1.5;
 }
 .wc-price-tag {
-  flex-shrink: 0;
-  font-family: var(--serif);
-  font-size: 17px;
-  font-weight: 600;
+  font-family: 'Inter Tight', var(--sans);
+  font-size: 14px;
+  font-weight: 700;
   color: var(--wine);
   letter-spacing: -.01em;
   white-space: nowrap;
@@ -473,14 +472,7 @@ body::before {
 
 
 
-/* Preço no rodapé do card */
-.wc-price-tag {
-  font-family: var(--sans);
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink);
-  margin-left: auto;
-}
+
 
 
 /* Botão Voltar do wizard */
