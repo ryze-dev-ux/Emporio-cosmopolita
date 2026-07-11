@@ -1293,15 +1293,37 @@ const searchWizard = (() => {
       relaxNote = 'Sugestões baseadas no tipo e faixa de preço escolhidos.';
     }
     if (result.length < 3) {
-      // 5. Remove tipo — só preço
-      const a5 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null, estilo: null, tipo: null });
+      // 5. Remove estilo — mantém tipo e preço (NUNCA remove o tipo selecionado)
+      const a5 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null, estilo: null });
       result = applyFilters(wines, a5, false);
+      relaxNote = 'Sugestões baseadas no tipo e faixa de preço escolhidos.';
+    }
+    if (result.length < 3) {
+      // 6. Só preço + tipo — último recurso, mas mantém tipo
+      result = wines.filter(w => {
+        const cv = w.cost_value || 0;
+        const pr = st.answers.price;
+        if (pr && (cv < pr.min || cv > pr.max)) return false;
+        if (st.answers.tipo && w.type) {
+          const map = { 'vinho tinto': 'tinto', 'vinho branco': 'branco', 'espumante': 'espumante' };
+          const keyword = map[st.answers.tipo.toLowerCase()] || st.answers.tipo.toLowerCase();
+          if (!w.type.toLowerCase().includes(keyword)) return false;
+        }
+        return cv > 1;
+      });
       relaxNote = 'Sugestões disponíveis na faixa de preço escolhida.';
     }
     if (result.length < 3) {
-      // 6. Remove todos os filtros — retorna qualquer vinho do catálogo
-      result = wines.filter(w => (w.cost_value || 0) > 1);
-      relaxNote = 'Aqui estão nossas sugestões para você.';
+      // 7. Só tipo, sem preço — garante que sempre mostra o tipo certo
+      result = wines.filter(w => {
+        if (st.answers.tipo && w.type) {
+          const map = { 'vinho tinto': 'tinto', 'vinho branco': 'branco', 'espumante': 'espumante' };
+          const keyword = map[st.answers.tipo.toLowerCase()] || st.answers.tipo.toLowerCase();
+          if (!w.type.toLowerCase().includes(keyword)) return false;
+        }
+        return (w.cost_value || 0) > 1;
+      });
+      relaxNote = 'Aqui estão nossas sugestões de ' + (st.answers.tipo || 'bebidas') + '.';
     }
 
     // Limita a 12 cards e ordena por custo-benefício
