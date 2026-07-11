@@ -863,27 +863,29 @@ const searchWizard = (() => {
       { label: 'Espumante'    },
     ],
   };
+  // Estilo: vinhos tranquilos — doçura residual
   const STEP_ESTILO_VINHO = {
     key: 'estilo', label: 'Estilo', icon: '✨',
     options: [
-      { label: 'Suave'    },
-      { label: 'Meio Seco'},
+      { label: 'Sem preferência', any: true },
       { label: 'Seco'     },
+      { label: 'Meio Seco'},
+      { label: 'Suave'    },
     ],
   };
+  // Estilo: espumantes — método e doçura específicos
   const STEP_ESTILO_ESPUMANTE = {
     key: 'estilo', label: 'Estilo', icon: '✨',
     options: [
       { label: 'Sem preferência', any: true },
-      { label: 'Brut'            },
-      { label: 'Demi-sec'        },
-      { label: 'Moscatel'        },
-      { label: 'Suave'           },
-      { label: 'Rosé'            },
-      { label: 'Seco'            },
+      { label: 'Brut'     },  // seco (< 12g/L açúcar)
+      { label: 'Demi-sec' },  // meio doce (32–50g/L)
+      { label: 'Suave'    },  // doce
+      { label: 'Rosé'     },  // rosé independente de doçura
     ],
   };
-  const STEP_UVA = {
+  // Uvas para vinhos tintos
+  const STEP_UVA_TINTO = {
     key: 'uva', label: 'Tipo de Uva', icon: '🍇',
     options: [
       { label: 'Sem preferência', any: true },
@@ -894,19 +896,35 @@ const searchWizard = (() => {
       { label: 'Merlot'             },
       { label: 'Shiraz / Syrah'     },
       { label: 'Tannat'             },
-      { label: 'Viognier'           },
       { label: 'Sangiovese'         },
-      { label: 'Sauvignon Blanc'    },
-      { label: 'Gewürztraminer'     },
-      { label: 'Chardonnay'         },
-      { label: 'Savagnin Blanc'     },
       { label: 'Cabernet Franc'     },
       { label: 'Petit Verdot'       },
       { label: 'Pinotage'           },
       { label: 'Pinot Noir'         },
-      { label: 'Pinot Grigio'       },
+      { label: 'Nebbiolo'           },
+      { label: 'Bonarda'            },
+      { label: 'Tempranillo'        },
     ],
   };
+  // Uvas para vinhos brancos
+  const STEP_UVA_BRANCO = {
+    key: 'uva', label: 'Tipo de Uva', icon: '🍇',
+    options: [
+      { label: 'Sem preferência', any: true },
+      { label: 'Blend de Uvas'   },
+      { label: 'Chardonnay'      },
+      { label: 'Sauvignon Blanc' },
+      { label: 'Pinot Grigio'    },
+      { label: 'Gewürztraminer'  },
+      { label: 'Viognier'        },
+      { label: 'Savagnin Blanc'  },
+      { label: 'Riesling'        },
+      { label: 'Moscatel'        },
+      { label: 'Encruzado'       },
+    ],
+  };
+  // Uva como alias para compatibilidade com applyFilters
+  const STEP_UVA = STEP_UVA_TINTO;
   const STEP_PAIS = {
     key: 'pais', label: 'País de Origem', icon: '🌍',
     options: [
@@ -937,18 +955,21 @@ const searchWizard = (() => {
   };
 
   /* ── Fluxos por tipo de bebida ─────────────────────────────────────── */
-  const FLOW_VINHO   = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA, STEP_PAIS, STEP_HARMONIZACAO];
-  const FLOW_ESPUMANTE = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_PAIS, STEP_HARMONIZACAO];
+  const FLOW_TINTO     = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_TINTO,  STEP_PAIS, STEP_HARMONIZACAO];
+  const FLOW_BRANCO    = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_BRANCO, STEP_PAIS, STEP_HARMONIZACAO];
+  const FLOW_VINHO     = FLOW_TINTO; // fallback
+  const FLOW_ESPUMANTE  = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_PAIS, STEP_HARMONIZACAO];
 
   /* ── Retorna o fluxo ativo baseado na resposta de "tipo" ───────────── */
   function getFlow() {
     const tipo = st.answers.tipo || '';
-    if (tipo === 'Espumante') return FLOW_ESPUMANTE;
-    return FLOW_VINHO;
+    if (tipo === 'Espumante')    return FLOW_ESPUMANTE;
+    if (tipo === 'Vinho Branco') return FLOW_BRANCO;
+    return FLOW_TINTO; // Vinho Tinto ou sem seleção
   }
 
   // STEPS é sempre o fluxo ativo — usado por todo o resto do wizard
-  const STEPS = FLOW_VINHO; // placeholder inicial; getFlow() é usado em runtime
+  const STEPS = FLOW_TINTO; // placeholder inicial; getFlow() é usado em runtime
 
   /* ── Estado ────────────────────────────────────────────────────────── */
   let st = { step: 0, answers: {} };
@@ -998,17 +1019,25 @@ const searchWizard = (() => {
       if (ans.estilo && w.type) {
         const wt = norm(w.type);
         const es = norm(ans.estilo);
-        const estiloAny = (ans.tipo === 'Espumante'
-          ? STEP_ESTILO_ESPUMANTE
-          : STEP_ESTILO_VINHO
-        ).options.find(o => o.label === ans.estilo)?.any;
-        if (!estiloAny && !wt.includes(es)) return false;
+        const estiloStep = ans.tipo === 'Espumante' ? STEP_ESTILO_ESPUMANTE : STEP_ESTILO_VINHO;
+        const estiloAny  = estiloStep.options.find(o => o.label === ans.estilo)?.any;
+        if (!estiloAny) {
+          // Para espumantes "Rosé": campo type contém "rosé" ou "rose"
+          // Para "Brut": contém "brut"
+          // Para "Demi-sec": contém "demi" ou "meio"
+          // Para vinhos: "seco", "suave", "meio seco" no campo type
+          const esMap = { 'demi-sec': ['demi', 'meio seco'], 'rose': ['rose', 'rosé'] };
+          const alts  = esMap[es] || [es];
+          if (!alts.some(a => wt.includes(norm(a)))) return false;
+        }
       }
-      // Uva — ignora se "Sem preferência" (any:true) ou campo vazio
-      const uvaAny = STEP_UVA.options.find(o => o.label === ans.uva)?.any;
+      // Uva — usa step correto por tipo; ignora se "Sem preferência"
+      const uvaStep = ans.tipo === 'Vinho Branco' ? STEP_UVA_BRANCO : STEP_UVA_TINTO;
+      const uvaAny  = uvaStep.options.find(o => o.label === ans.uva)?.any;
       if (ans.uva && !uvaAny && norm(ans.uva) !== 'blend de uvas' && w.grapes) {
-        const wg = norm(w.grapes);
-        const terms = norm(ans.uva).replace('shiraz  syrah','syrah shiraz').split(' ').filter(t => t.length > 2);
+        const wg    = norm(w.grapes);
+        const terms = norm(ans.uva).replace('shiraz  syrah','syrah shiraz')
+                        .split(/[\s/]+/).filter(t => t.length > 2);
         if (!terms.some(t => wg.includes(t))) return false;
       }
       // País (ignorado se relaxado)
@@ -1116,23 +1145,25 @@ const searchWizard = (() => {
       return;
     }
 
-    // Divide em 3 faixas e sorteia 1 de cada — garante variedade a cada pesquisa
+    // Divide em 3 faixas e sorteia 1 de cada — garante variedade
     const sorted = [...wines].sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
     function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-    const third = Math.ceil(sorted.length / 3);
-    const faixaCb   = sorted.slice(0, third);
-    const faixaMed  = sorted.slice(third, third * 2);
-    const faixaCaro = sorted.slice(third * 2);
+    const third    = Math.max(1, Math.ceil(sorted.length / 3));
+    const faixaCb  = sorted.slice(0, third);
+    const faixaMed = sorted.slice(third, third * 2);
+    const faixaCaro= sorted.slice(third * 2);
 
     const cb   = pickRandom(faixaCb);
     const med  = faixaMed.length  ? pickRandom(faixaMed)  : null;
     const caro = faixaCaro.length ? pickRandom(faixaCaro) : null;
 
-    // Evita repetição se lista tiver poucos vinhos
-    const trio = [cb];
-    if (med  && med.id  !== cb.id) trio.push(med);
-    if (caro && caro.id !== cb.id && caro.id !== (med?.id)) trio.push(caro);
+    // Monta trio sem repetições
+    const seen = new Set();
+    const trio = [];
+    for (const w of [cb, med, caro]) {
+      if (w && !seen.has(w.id)) { trio.push(w); seen.add(w.id); }
+    }
 
     const labels = ['💚 Custo-Benefício', '🥂 Preço Médio', '✨ Premium'];
 
@@ -1326,8 +1357,8 @@ const searchWizard = (() => {
       relaxNote = 'Aqui estão nossas sugestões de ' + (st.answers.tipo || 'bebidas') + '.';
     }
 
-    // Limita a 12 cards e ordena por custo-benefício
-    result = result.sort((a,b) => (a.cost_value||0) - (b.cost_value||0)).slice(0, 12);
+    // Ordena por preço — sem limite artificial
+    result = result.sort((a,b) => (a.cost_value||0) - (b.cost_value||0));
 
     renderResults(result, false, relaxNote);
   }
