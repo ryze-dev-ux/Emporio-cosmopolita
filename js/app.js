@@ -1224,7 +1224,8 @@ const searchWizard = (() => {
       const isSelected = currentAns && (
         (step.key === 'price' ? currentAns.label === opt.label : currentAns === opt.label)
       );
-      return `<button class="prompt-card wz-option${isSelected ? ' sw-selected' : ''}" data-label="${esc(opt.label)}">
+      const hasFlag = !!opt.flag;
+      return `<button class="prompt-card wz-option${isSelected ? ' sw-selected' : ''}${hasFlag ? ' wz-option-flag' : ''}" data-label="${esc(opt.label)}">
         ${iconHtml}
         <span class="prompt-text wz-opt-label">${esc(opt.label)}</span>
       </button>`;

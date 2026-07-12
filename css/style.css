@@ -537,6 +537,7 @@ body::before {
 
 /* Botão Voltar do wizard */
 .wz-back {
+  display: inline-block;
   margin-top: 12px;
   background: none;
   border: none;
@@ -546,6 +547,8 @@ body::before {
   cursor: pointer;
   padding: 4px 0;
   transition: color .15s;
+  appearance: none;
+  -webkit-appearance: none;
 }
 .wz-back:hover { color: var(--ink); }
 
@@ -707,3 +710,19 @@ body::before {
   margin-right: auto;
 }
 .sw-relax-icon { flex-shrink: 0; font-size: 14px; }
+
+/* ── Opções com bandeira: flag + nome em linha ───────────── */
+.wz-option-flag {
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  text-align: left !important;
+  padding-left: 14px !important;
+}
+.wz-option-flag .wz-flag {
+  flex-shrink: 0;
+}
+.wz-option-flag .wz-opt-label {
+  text-align: left;
+}
