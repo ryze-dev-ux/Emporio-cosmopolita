@@ -878,10 +878,11 @@ const searchWizard = (() => {
     key: 'estilo', label: 'Estilo', icon: '✨',
     options: [
       { label: 'Sem preferência', any: true },
-      { label: 'Brut'     },  // seco (< 12g/L açúcar)
-      { label: 'Demi-sec' },  // meio doce (32–50g/L)
-      { label: 'Suave'    },  // doce
-      { label: 'Rosé'     },  // rosé independente de doçura
+      { label: 'Brut'     },
+      { label: 'Demi-sec' },
+      { label: 'Moscatel' },
+      { label: 'Prosecco' },
+      { label: 'Rosé'     },
     ],
   };
   // Uvas para vinhos tintos
@@ -1026,7 +1027,7 @@ const searchWizard = (() => {
           // Para "Brut": contém "brut"
           // Para "Demi-sec": contém "demi" ou "meio"
           // Para vinhos: "seco", "suave", "meio seco" no campo type
-          const esMap = { 'demi-sec': ['demi', 'meio seco'], 'rose': ['rose', 'rosé'] };
+          const esMap = { 'demi-sec': ['demi', 'meio seco'], 'rose': ['rose', 'rosé'], 'moscatel': ['moscatel'], 'prosecco': ['prosecco'] };
           const alts  = esMap[es] || [es];
           if (!alts.some(a => wt.includes(norm(a)))) return false;
         }
