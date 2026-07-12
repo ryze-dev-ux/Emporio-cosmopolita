@@ -1429,32 +1429,33 @@ function normWineName(name) {
 }
 function wineImageUrl(name) {
   const map = window._driveImages || {};
-  const deaccent = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const toKey = s => deaccent(String(s).toLowerCase().trim())
-    .replace(/[^a-z0-9]/g, '_').replace(/_+/g,'_').replace(/^_|_$/g,'');
 
-  // Nome sem sufixo de volume (" - 750ml", " - 375ml", etc.)
-  const nameNoVol = String(name).trim().replace(/\s*-?\s*\d+\s*(ml|l|litros?)\s*$/i, '').trim();
-  const keyFull = toKey(name);
-  const keyBase = toKey(nameNoVol);
+  // Normalização idêntica ao normKey do gdrive.js
+  const toKey = s => String(s).toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
 
-  // 1. Match exato nome completo
+  // Remove sufixo de volume do nome do vinho (ex: " - 750ml", " - 375ml")
+  const nameNoVol = String(name).trim()
+    .replace(/\s*-\s*\d+(\s*ml|\s*l|\s*litros?)\s*$/i, '').trim();
+
+  const keyFull = toKey(name);       // com volume se vier
+  const keyBase = toKey(nameNoVol);  // sem volume
+
+  const keys = Object.keys(map);
+
+  // 1. Match exato — nome completo bate com chave do mapa
   if (map[keyFull]) return map[keyFull];
-
-  // 2. Match sem volume
   if (map[keyBase]) return map[keyBase];
 
-  // 3. Chave começa com keyBase (arquivo tem sufixo extra como "_750ml")
-  const startMatch = Object.keys(map).find(k => k.startsWith(keyBase + '_'));
-  if (startMatch) return map[startMatch];
+  // 2. Nome do vinho sem volume === chave do arquivo sem sufixo de volume
+  //    Extrai o nome da chave removendo o padrão "_-_NNNml" ou "_NNNml" do final
+  const volumeSuffixes = /(_-_\d+ml|_-_\d+_5l|_-_\d+_5_litros|_\d+ml|_\d+_5l)$/;
+  const exactMatch = keys.find(k => k.replace(volumeSuffixes, '') === keyBase);
+  if (exactMatch) return map[exactMatch];
 
-  // 4. keyBase começa com chave (chave é prefixo)
-  const reverseMatch = Object.keys(map).find(k => keyBase.startsWith(k) && k.length > 10);
-  if (reverseMatch) return map[reverseMatch];
-
-  // 5. Parcial primeiros 18 chars
-  const partial = Object.keys(map).find(k => k.startsWith(keyBase.slice(0, 18)));
-  return partial ? map[partial] : null;
+  // SEM FALLBACK — placeholder se não encontrou exatamente
+  return null;
 }
 
 function formatReply(raw) {
