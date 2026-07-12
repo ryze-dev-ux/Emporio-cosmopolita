@@ -1149,8 +1149,15 @@ const searchWizard = (() => {
     const sorted = [...wines].sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
     const cardsHtml = sorted.map(w => renderCard(w)).join('');
 
+    const relaxBanner = relaxNote ? `
+      <div class="sw-relax-banner">
+        <span class="sw-relax-icon">ℹ️</span>
+        <span>Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.</span>
+      </div>` : '';
+
     thread.innerHTML = `
       <div class="sw-wrap">
+        ${relaxBanner}
         <p class="sw-results-count">${sorted.length} resultado${sorted.length !== 1 ? 's' : ''} encontrado${sorted.length !== 1 ? 's' : ''}</p>
         <div class="sw-trio" id="swCards">${cardsHtml}</div>
         <div class="sw-results-footer">

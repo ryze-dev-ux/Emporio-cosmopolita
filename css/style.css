@@ -686,3 +686,24 @@ body::before {
   margin-bottom: 14px;
   text-align: center;
 }
+
+/* ── Banner de opções similares ─────────────────────────── */
+.sw-relax-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(168,132,61,.08);
+  border: 1px solid rgba(168,132,61,.25);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  line-height: 1.5;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.sw-relax-icon { flex-shrink: 0; font-size: 14px; }
