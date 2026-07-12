@@ -881,7 +881,6 @@ const searchWizard = (() => {
       { label: 'Brut'     },
       { label: 'Demi-sec' },
       { label: 'Moscatel' },
-      { label: 'Prosecco' },
       { label: 'Rosé'     },
     ],
   };
@@ -1027,7 +1026,7 @@ const searchWizard = (() => {
           // Para "Brut": contém "brut"
           // Para "Demi-sec": contém "demi" ou "meio"
           // Para vinhos: "seco", "suave", "meio seco" no campo type
-          const esMap = { 'demi-sec': ['demi', 'meio seco'], 'rose': ['rose', 'rosé'], 'moscatel': ['moscatel'], 'prosecco': ['prosecco'] };
+          const esMap = { 'demi-sec': ['demi', 'meio seco'], 'rose': ['rose', 'rosé'], 'moscatel': ['moscatel'], };
           const alts  = esMap[es] || [es];
           if (!alts.some(a => wt.includes(norm(a)))) return false;
         }
