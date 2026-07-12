@@ -551,7 +551,7 @@ body::before {
 
 /* ── Responsivo ─────────────────────────────────────────── */
 @media (max-width: 860px) {
-  .shell { position: relative; z-index: 1; display: block; width: 100%; height: 100vh; height: 100dvh; }
+  .shell { grid-template-columns: 1fr; }
   .rail  { display: none; }
 
   .stage-head    { padding: 12px 16px; }
@@ -579,7 +579,9 @@ body::before {
 }
 
 /* ── Rail colapsável ────────────────────────────────────── */
-.shell { position: relative; z-index: 1; display: block; width: 100%; height: 100vh; height: 100dvh; }
+.shell {
+  transition: grid-template-columns .25s cubic-bezier(.4,0,.2,1);
+}
 .shell.rail-collapsed {
   grid-template-columns: 0px 1fr;
 }
@@ -617,57 +619,8 @@ body::before {
 
 
 
-/* ── Shell sem rail ─────────────────────────────────────── */
-.shell {
-  display: block;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-}
-.stage {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  width: 100%;
-  height: 100vh;
-}
-
-/* ── Imagem da garrafa nos cards do wizard ───────────────── */
+/* ── Imagem garrafa ─────────────────────────────────────── */
 .wc-bottle-img {
-  width: 114px;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 4px;
-  display: block;
-}
-.wc-bottle-ph {
-  width: 114px;
-  height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  opacity: .3;
-  background: var(--bg);
-  border-radius: 4px;
-}
-
-/* ── Layout novo do card: imagem esquerda | info direita ─── */
-.wc-body {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-}
-.wc-img-col {
-  flex-shrink: 0;
-  width: 130px;
-  align-self: stretch;
-  position: relative;
-  overflow: hidden;
-  border-right: 1px solid var(--line);
-  padding: 0;
-}
-.wc-img-col .wc-bottle-img {
   position: absolute;
   top: 0; left: 0;
   width: 100%;
@@ -675,8 +628,9 @@ body::before {
   object-fit: cover;
   object-position: center;
   display: block;
+  border-radius: 0;
 }
-.wc-img-col .wc-bottle-ph {
+.wc-bottle-ph {
   position: absolute;
   top: 0; left: 0;
   width: 100%;
@@ -688,90 +642,34 @@ body::before {
   opacity: .3;
   background: var(--bg);
 }
+
+/* ── Layout card: imagem esquerda | info direita ─────────── */
+.wc-body { display: flex; align-items: stretch; }
+.wc-img-col {
+  flex-shrink: 0;
+  width: 130px;
+  align-self: stretch;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+}
 .wc-info-col {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 14px 16px 14px;
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  padding: 14px 16px;
 }
-.wc-info-col .wc-lines {
-  margin-top: 10px;
-  border-top: 1px solid var(--line);
-}
-.wc-country {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 6px;
-  font-family: var(--sans);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--gold);
-}
+.wc-info-col .wc-lines { margin-top: 10px; border-top: 1px solid var(--line); }
 
-/* padrão único: sans 11px 700 uppercase gold */
-.wc-name {
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--gold);
-  line-height: 1.3;
-}
-.wc-maker {
-  font-family: var(--sans);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--gold);
-  margin-top: 6px;
-}
-.wc-line-val {
-  flex: 1;
-  font-family: var(--sans);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--gold);
-}
-.wc-italic { font-style: normal; }
-.wc-price-tag {
-  font-family: 'Inter Tight', var(--sans);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--wine);
-  letter-spacing: -.01em;
-  white-space: nowrap;
-}
+/* ── Tipografia padrão dos cards ─────────────────────────── */
+.wc-name  { font-family:var(--sans);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);line-height:1.3; }
+.wc-maker { font-family:var(--sans);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);margin-top:6px; }
+.wc-country { display:flex;align-items:center;gap:5px;margin-top:6px;font-family:var(--sans);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold); }
+.wc-line-val { flex:1;font-family:var(--sans);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold); }
+.wc-italic { font-style:normal; }
+.wc-price-tag { font-family:'Inter Tight',var(--sans);font-size:14px;font-weight:700;color:var(--wine);letter-spacing:-.01em;white-space:nowrap; }
 
-/* ── Wizard ──────────────────────────────────────────────── */
+/* ── Wizard resultados ───────────────────────────────────── */
 .sw-wrap { padding: 20px 0; }
-.sw-trio {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-.sw-results-footer {
-  display: flex;
-  justify-content: center;
-  padding: 20px 0 8px;
-}
-.sw-results-count {
-  font-family: var(--sans);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 14px;
-  padding-left: 2px;
-  text-align: center;
-}
+.sw-trio { display:flex;flex-direction:column;gap:16px;max-width:600px;margin:0 auto; }
+.sw-results-footer { display:flex;justify-content:center;padding:20px 0 8px; }
+.sw-results-count { font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px;text-align:center; }
