@@ -1450,9 +1450,22 @@ function wineImageUrl(name) {
 
   // 2. Nome do vinho sem volume === chave do arquivo sem sufixo de volume
   //    Extrai o nome da chave removendo o padrão "_-_NNNml" ou "_NNNml" do final
-  const volumeSuffixes = /(_-_\d+ml|_-_\d+_5l|_-_\d+_5_litros|_\d+ml|_\d+_5l)$/;
-  const exactMatch = keys.find(k => k.replace(volumeSuffixes, '') === keyBase);
-  if (exactMatch) return map[exactMatch];
+  // Match exato: remove sufixo de volume da chave e compara com keyBase
+  // Tenta primeiro a chave que inclui o volume do nome original
+  const keyFullVol = toKey(name); // com volume
+  const exactFull = keys.find(k => k === keyFullVol);
+  if (exactFull) return map[exactFull];
+
+  // Remove sufixo de volume da chave do mapa e compara com keyBase
+  const volumeSuffixes = /(_-_\d+(?:_5)?(?:ml|l|litros?)|_\d+(?:_5)?(?:ml|l|litros?))$/i;
+  // Filtra apenas chaves cujo nome base é EXATAMENTE igual ao keyBase
+  const candidates = keys.filter(k => k.replace(volumeSuffixes, '') === keyBase);
+  if (candidates.length === 1) return map[candidates[0]];
+  if (candidates.length > 1) {
+    // Se há múltiplos (ex: 375ml e 750ml), prefere 750ml
+    const prefer = candidates.find(k => k.includes('_750ml') || k.includes('_-_750ml')) || candidates[0];
+    return map[prefer];
+  }
 
   // SEM FALLBACK — placeholder se não encontrou exatamente
   return null;
