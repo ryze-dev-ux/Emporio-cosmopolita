@@ -1,5 +1,21 @@
 'use strict';
 
+/**
+ * netlify/functions/auth.js
+ * Empório Cosmopolita — Autenticação
+ *
+ * POST /api/auth/login   → { username, password } → { token, role, name, expiresAt }
+ * POST /api/auth/verify  → { token } → { valid, role, username, name }
+ * POST /api/auth/logout  → { token } → 204
+ *
+ * Credenciais via variáveis de ambiente (Netlify → Site Settings → Env Vars):
+ *   ADMIN_SECRET        segredo HMAC (obrigatório em produção)
+ *   AUTH_ADMIN_USER     usuário admin  (padrão: admin)
+ *   AUTH_ADMIN_PASS     senha admin    (padrão: admin123)
+ *   AUTH_CLIENT_USER    usuário cliente (padrão: cliente)
+ *   AUTH_CLIENT_PASS    senha cliente   (padrão: cliente123)
+ */
+
 const crypto = require('crypto');
 
 const CORS = {
@@ -8,100 +24,133 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const ROLES        = { ADMIN: 'admin', CLIENT: 'client' };
-const TOKEN_TTL_MS = 8 * 60 * 60 * 1000;
-const _revoked     = new Set();
+const ROLES = { ADMIN: 'admin', CLIENT: 'client' };
+const TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // 8 horas
 
+/* ── Lista negra de tokens revogados (em memória) ── */
+const _revoked = new Set();
+
+/* ── Segredo HMAC ── */
 function secret() {
   return process.env.ADMIN_SECRET || 'ec-dev-secret-troque-em-producao-2025';
 }
 
+/* ── Usuários (carregados das env vars) ── */
 function users() {
   return [
     {
-      username:     process.env.AUTH_ADMIN_USER || 'admin',
-      passwordHash: sha256(process.env.AUTH_ADMIN_PASS || 'admin123'),
-      role: ROLES.ADMIN,
-      name: 'Administrador',
+      username:     process.env.AUTH_ADMIN_USER  || 'admin',
+      passwordHash: sha256(process.env.AUTH_ADMIN_PASS  || 'admin123'),
+      role:         ROLES.ADMIN,
+      name:         'Administrador',
     },
     {
       username:     process.env.AUTH_CLIENT_USER || 'cliente',
       passwordHash: sha256(process.env.AUTH_CLIENT_PASS || 'cliente123'),
-      role: ROLES.CLIENT,
-      name: 'Cliente',
+      role:         ROLES.CLIENT,
+      name:         'Cliente',
     },
   ];
 }
 
-function sha256(t) {
-  return crypto.createHash('sha256').update(String(t)).digest('hex');
+function sha256(text) {
+  return crypto.createHash('sha256').update(String(text)).digest('hex');
 }
-function sign(p) {
-  return crypto.createHmac('sha256', secret()).update(p).digest('base64url');
+
+function sign(payload) {
+  return crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
 }
+
 function generateToken(user) {
-  const now = Date.now();
-  const p   = Buffer.from(JSON.stringify({
-    sub: user.username, role: user.role, name: user.name,
-    iat: now, exp: now + TOKEN_TTL_MS,
+  const now     = Date.now();
+  const payload = Buffer.from(JSON.stringify({
+    sub:  user.username,
+    role: user.role,
+    name: user.name,
+    iat:  now,
+    exp:  now + TOKEN_TTL_MS,
   })).toString('base64url');
-  return p + '.' + sign(p);
+  return payload + '.' + sign(payload);
 }
+
 function verifyToken(token) {
   if (!token || typeof token !== 'string') return null;
   if (_revoked.has(token)) return null;
+
   const parts = token.split('.');
   if (parts.length !== 2) return null;
-  const [p, sig] = parts;
+
+  const [payload, sig] = parts;
+  const expected = sign(payload);
+
+  let valid = false;
   try {
-    if (!crypto.timingSafeEqual(
-      Buffer.from(sig,    'base64url'),
-      Buffer.from(sign(p),'base64url')
-    )) return null;
+    valid = crypto.timingSafeEqual(
+      Buffer.from(sig,      'base64url'),
+      Buffer.from(expected, 'base64url')
+    );
   } catch { return null; }
+
+  if (!valid) return null;
+
   let data;
-  try { data = JSON.parse(Buffer.from(p, 'base64url').toString()); }
+  try { data = JSON.parse(Buffer.from(payload, 'base64url').toString()); }
   catch { return null; }
+
   if (!data || Date.now() > data.exp) return null;
   return data;
 }
 
-function reply(status, obj) {
-  return {
-    statusCode: status,
-    headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' },
-    body: JSON.stringify(obj),
+module.exports = async (req, res) => {
+  const event = {
+    httpMethod: req.method,
+    queryStringParameters: req.query || {},
+    headers: req.headers || {},
+    body: null,
   };
-}
+  const result = await _handler(event);
+  if (result.headers) Object.entries(result.headers).forEach(([k,v]) => res.setHeader(k,v));
+  if (result.isBase64Encoded) {
+    res.status(result.statusCode).send(Buffer.from(result.body,'base64'));
+  } else {
+    res.status(result.statusCode).send(result.body);
+  }
+};
 
-exports.handler = async (event) => {
+async function _handler(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST')    return reply(405, { error: 'Método não permitido.' });
 
-  // Lê o body (com suporte a base64 do Netlify)
-  let raw = event.body || '{}';
-  if (event.isBase64Encoded) raw = Buffer.from(raw, 'base64').toString('utf8');
+  // Detecta ação pelo path OU pelo campo 'action' no body
+  // Com URLs nativas Netlify, o path pode variar: /auth, /auth/login, etc.
+  const pathAction = (event.path || event.rawPath || '').split('/').filter(Boolean).pop();
+  let action = ['login','verify','logout'].includes(pathAction) ? pathAction : null;
+
+  // Fallback: lê do body se não veio no path
+  if (!action) {
+    try {
+      const b = JSON.parse(event.body || '{}');
+      if (['login','verify','logout'].includes(b.action)) action = b.action;
+    } catch { }
+  }
+
+  // Log para diagnóstico
+  console.log('[auth] path:', event.path, '| rawPath:', event.rawPath, '| action:', action);
 
   let body;
-  try { body = JSON.parse(raw); }
+  try { body = JSON.parse(event.body || '{}'); }
   catch { return reply(400, { error: 'JSON inválido.' }); }
 
-  // Detecta ação: primeiro pelo path, depois pelo campo action no body
-  const pathLast = (event.path || event.rawPath || '').split('/').filter(Boolean).pop() || '';
-  const action   = ['login','verify','logout'].includes(pathLast)
-    ? pathLast
-    : (['login','verify','logout'].includes(body.action) ? body.action : null);
-
-  // LOGIN
+  /* LOGIN */
   if (action === 'login') {
     const { username, password } = body;
     if (!username || !password)
       return reply(400, { error: 'Usuário e senha são obrigatórios.' });
 
-    await new Promise(r => setTimeout(r, 80 + Math.random() * 80));
+    await new Promise(r => setTimeout(r, 80 + Math.random() * 80)); // anti-timing
 
     const user = users().find(
-      u => u.username === String(username).trim() && u.passwordHash === sha256(password)
+      u => u.username === username.trim() && u.passwordHash === sha256(password)
     );
     if (!user) return reply(401, { error: 'Usuário ou senha incorretos.' });
 
@@ -115,21 +164,29 @@ exports.handler = async (event) => {
     });
   }
 
-  // VERIFY
+  /* VERIFY */
   if (action === 'verify') {
     const data = verifyToken(body.token);
     if (!data) return reply(401, { valid: false, error: 'Token inválido ou expirado.' });
     return reply(200, { valid: true, role: data.role, username: data.sub, name: data.name, expiresAt: data.exp });
   }
 
-  // LOGOUT
+  /* LOGOUT */
   if (action === 'logout') {
     if (body.token) _revoked.add(body.token);
     return reply(200, { ok: true });
   }
 
-  return reply(400, { error: 'Ação inválida. Use: login, verify ou logout.' });
+  return reply(404, { error: 'Ação não encontrada.' });
 };
 
 exports.verifyToken = verifyToken;
 exports.ROLES       = ROLES;
+
+function reply(status, obj) {
+  return {
+    statusCode: status,
+    headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' },
+    body: JSON.stringify(obj),
+  };
+}

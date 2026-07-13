@@ -825,6 +825,7 @@ function loadSession(id) {
 
 function renderThreadList() {
   const el = document.getElementById('threadList');
+  if (!el) return;
   el.innerHTML = '';
   if (!state.sessions.length) { el.innerHTML = '<p class="thread-empty">Nenhuma conversa ainda.</p>'; return; }
   [...state.sessions].reverse().forEach(s => {

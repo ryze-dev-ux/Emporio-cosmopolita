@@ -94,7 +94,23 @@ function wineCtx(w) {
 }
 
 /* ── Handler ──────────────────────────────────────────────── */
-exports.handler = async (event) => {
+module.exports = async (req, res) => {
+  const event = {
+    httpMethod: req.method,
+    queryStringParameters: req.query || {},
+    headers: req.headers || {},
+    body: null,
+  };
+  const result = await _handler(event);
+  if (result.headers) Object.entries(result.headers).forEach(([k,v]) => res.setHeader(k,v));
+  if (result.isBase64Encoded) {
+    res.status(result.statusCode).send(Buffer.from(result.body,'base64'));
+  } else {
+    res.status(result.statusCode).send(result.body);
+  }
+};
+
+async function _handler(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST')    return reply(405, { error: 'Método não permitido.' });
 

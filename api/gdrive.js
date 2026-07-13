@@ -167,7 +167,23 @@ function parseXlsx(buf) {
   };
 }
 
-exports.handler = async (event) => {
+module.exports = async (req, res) => {
+  const event = {
+    httpMethod: req.method,
+    queryStringParameters: req.query || {},
+    headers: req.headers || {},
+    body: null,
+  };
+  const result = await _handler(event);
+  if (result.headers) Object.entries(result.headers).forEach(([k,v]) => res.setHeader(k,v));
+  if (result.isBase64Encoded) {
+    res.status(result.statusCode).send(Buffer.from(result.body,'base64'));
+  } else {
+    res.status(result.statusCode).send(result.body);
+  }
+};
+
+async function _handler(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode:204, headers:CORS, body:'' };
   if (event.httpMethod !== 'GET') return reply(405, { error:'Metodo nao permitido' });
 
@@ -207,6 +223,8 @@ exports.handler = async (event) => {
             if (espRows.length >= 8) break;
           }
         }
+        // Mostra linhas ao redor do "fim" dos vinhos atuais (linha 410-415)
+        const sliceRows = rows.slice(408, 420).map((r,i) => ({idx: 408+i, cols: (r||[]).slice(0,6)}));
         return reply(200, {
           sheets:  wb.SheetNames,
           sheetUsed: shName,
@@ -217,6 +235,7 @@ exports.handler = async (event) => {
           hIdx:    hIdx,
           bufSize: buf.length,
           espumantes: espRows,
+          rows408to420: sliceRows,
         });
       }
 
