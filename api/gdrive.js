@@ -87,6 +87,15 @@ function normKey(s) {
   return s.replace(/\.(jpg|jpeg|png|webp|gif)$/i, '').toLowerCase().trim();
 }
 
+function normHeader(s) {
+  // Remove acentos, lowercase, colapsa espaços — usado para comparação EXATA
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function parseXlsx(buf) {
   const XLSX = require('xlsx');
   const wb   = XLSX.read(buf, { type:'buffer' });
@@ -98,25 +107,30 @@ function parseXlsx(buf) {
   for (let i = 0; i < Math.min(5, rows.length); i++) {
     if (rows[i].some(c => c !== null)) { hIdx = i; break; }
   }
-  const headers = rows[hIdx].map(h => String(h||'').toLowerCase().trim());
+  const headers = rows[hIdx].map(h => String(h||'').trim());
 
   const COLS = {
     name:        ['produto','nome','name'],
-    qty:         ['qtd atual','quantidade','qty','estoque'],
-    cost:        ['preco','preço','custo medio','custo médio','price'],
-    country:     ['pais','país','pais de origem','país de origem'],
-    winery:      ['vinicola','vinícola','produtor','winery'],
+    qty:         ['qtd atual','quantidade','qty','estoque','qtd','saldo'],
+    cost:        ['preco','custo medio','price'],
+    country:     ['pais','pais de origem'],
+    winery:      ['vinicola','produtor','winery'],
     grapes:      ['uva','casta','uva / casta','uva/casta'],
     type:        ['tipo','type'],
-    temperature: ['temperatura'],
+    temperature: ['temperatura de servico','temperatura'],
     tannins:     ['taninos'],
-    pairing:     ['harmonizacao','harmonização','harmoniza'],
+    pairing:     ['harmonizacao','harmoniza'],
   };
 
+  // Correspondência EXATA (não por substring) para evitar colisões como
+  // "estoque" batendo dentro de "disponível em estoque/loja? (s/n)"
+  // em vez da coluna correta "qtd atual".
+  const normHeaders = headers.map(h => normHeader(h));
   const map = {};
   for (const [field, aliases] of Object.entries(COLS)) {
-    for (let i = 0; i < headers.length; i++) {
-      if (aliases.some(a => headers[i].includes(a))) { map[field] = i; break; }
+    for (const alias of aliases) {
+      const idx = normHeaders.indexOf(normHeader(alias));
+      if (idx !== -1) { map[field] = idx; break; }
     }
   }
 
