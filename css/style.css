@@ -7,6 +7,8 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 img { display: block; max-width: 100%; height: auto; }
+html, body { overflow-x: hidden; }
+* { min-width: 0; }
 
 :root {
   /* Marfim mineral */
@@ -535,41 +537,128 @@ body::after {
 .shell.rail-collapsed .rail-toggle { left: 16px; }
 
 /* ── Responsivo ─────────────────────────────────────────── */
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVO — PC · Tablet · Celular
+════════════════════════════════════════════════════════════ */
+
+/* md ≤ 860px — Tablet / landscape */
 @media (max-width: 860px) {
-  .shell { grid-template-columns: 1fr; }
-  .rail  { display: none; }
-
-  .stage-head  { padding: 14px 18px; }
-  .stage-brand { font-size: 15px; }
-  .stage-logo  { width: 26px; height: 26px; }
-
-  .hero-title  { font-size: 44px; margin-bottom: 30px; }
-  .hero-cta    { font-size: 15.5px; padding: 16px 26px; }
-
-  .thread { padding: 24px 16px 12px; }
-
+  .shell { display: block; }
+  .stage-head  { padding: 14px 20px; }
+  .stage-brand { font-size: 17px; gap: 8px; }
+  .stage-logo  { width: 28px !important; height: 28px !important; max-width: 28px !important; }
+  .thread { padding: 28px 20px 16px; }
+  .opener { max-width: 100%; padding: 10px 0; }
   .opener-logo  { width: 64px !important; height: 64px !important; max-width: 64px !important; margin-bottom: 18px; }
-  .opener-title { font-size: 34px; }
-  .opener-lead  { font-size: 15.5px; }
-  .prompt-grid  { grid-template-columns: 1fr; }
-
-  .wc-img-col { width: 96px; }
-  .wc-name    { font-size: 20px; }
+  .opener-title { font-size: 36px; }
+  .opener-lead  { font-size: 15.5px; max-width: 100%; }
+  .prompt-grid  { grid-template-columns: 1fr; gap: 7px; }
+  .prompt-card  { padding: 13px 16px; }
+  .sw-trio      { max-width: 100%; gap: 14px; }
+  .wc-img-col   { width: 100px; }
+  .wc-name      { font-size: 20px; }
+  .wc-line      { padding: 8px 16px; }
+  .wc-footer    { padding: 11px 16px 13px; }
+  .wz-back      { font-size: 14px; }
+  .sw-progress  { margin-bottom: 24px; }
+  .sw-relax-banner { font-size: 12px; }
+  .sw-summary   { max-width: 100%; }
+  .msg          { max-width: 100%; }
+  .msg-user .bubble { max-width: 88%; }
 }
 
-@media (max-width: 480px) {
-  .opener-title { font-size: 28px; }
-  .stage-head   { padding: 12px 14px; }
-  .thread       { padding: 18px 12px 10px; }
-
-  .wc-body    { flex-direction: column; }
-  .wc-img-col { width: 100%; height: 150px; border-right: none; border-bottom: 1px solid var(--line); }
-  .wc-footer  { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .wc-price-tag { font-size: 18px; }
+/* sm ≤ 600px — Phablet / tablet pequeno */
+@media (max-width: 600px) {
+  .stage-head   { padding: 12px 16px; }
+  .stage-brand  { font-size: 16px; gap: 7px; }
+  .stage-logo   { width: 26px !important; height: 26px !important; max-width: 26px !important; }
+  .thread       { padding: 22px 14px 12px; }
+  .opener-logo  { width: 54px !important; height: 54px !important; max-width: 54px !important; margin-bottom: 14px; }
+  .opener-title { font-size: 30px; letter-spacing: -.02em; }
+  .opener-lead  { font-size: 15px; margin-bottom: 22px; }
+  .opener-eyebrow { font-size: 9px; }
+  .prompt-card  { padding: 12px 14px; }
+  .prompt-eyebrow { font-size: 9px; }
+  .prompt-text  { font-size: 14px; }
+  .wz-option-flag { padding: 11px 14px !important; gap: 8px !important; }
+  .wz-flag      { width: 20px !important; height: 15px !important; }
+  .wc-body      { flex-direction: column; }
+  .wc-img-col   { width: 100% !important; height: 160px; border-right: none; border-bottom: 1px solid var(--line); }
+  .wc-info-col  { padding: 13px 14px; }
+  .wc-name      { font-size: 19px; }
+  .wc-maker     { font-size: 13px; }
+  .wc-line      { padding: 8px 14px; }
+  .wc-line-label { min-width: 80px; font-size: 10px; }
+  .wc-line-val  { font-size: 14px; }
+  .wc-footer    { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 14px 13px; }
+  .wc-price-tag { font-size: 19px; margin-left: 0; }
+  .wc-why-text  { font-size: 13px; }
+  .sw-results-footer { padding: 18px 0 6px; }
+  .sw-results-count { font-size: 9px; }
+  .wz-back      { font-size: 13px; padding: 9px 0; margin-top: 14px; }
+  .msg-user .bubble { max-width: 94%; font-size: 15px; }
+  .msg-sommelier .body { font-size: 14.5px; }
 }
 
-/* ── Rail colapsável ────────────────────────────────────── */
+/* xs ≤ 420px — Celular */
+@media (max-width: 420px) {
+  .stage-head   { padding: 10px 12px; }
+  .stage-brand  { font-size: 15px; gap: 6px; }
+  .stage-logo   { width: 24px !important; height: 24px !important; max-width: 24px !important; }
+  .thread       { padding: 16px 11px 10px; }
+  .opener       { padding: 6px 0; }
+  .opener-logo  { width: 48px !important; height: 48px !important; max-width: 48px !important; margin-bottom: 12px; }
+  .opener-title { font-size: 26px; margin-bottom: 10px; }
+  .opener-lead  { font-size: 14px; margin-bottom: 18px; }
+  .prompt-grid  { gap: 6px; }
+  .prompt-card  { padding: 11px 12px; }
+  .prompt-text  { font-size: 13.5px; }
+  .wc-img-col   { height: 140px; }
+  .wc-info-col  { padding: 11px 12px; }
+  .wc-name      { font-size: 17px; }
+  .wc-line      { padding: 7px 12px; gap: 8px; }
+  .wc-line-label { min-width: 72px; }
+  .wc-line-val  { font-size: 13.5px; }
+  .wc-footer    { padding: 9px 12px 12px; gap: 5px; }
+  .wc-price-tag { font-size: 17px; }
+  .sw-summary   { gap: 5px; }
+  .sw-tag       { font-size: 10.5px; padding: 3px 9px; }
+  .sw-relax-banner { padding: 10px 12px; font-size: 11.5px; }
+  .tip-bar      { padding: 10px 12px; font-size: 12.5px; }
+  .typing       { font-size: 12.5px; }
+  .sw-progress  { margin-bottom: 18px; }
+}
+
+/* Celular muito pequeno ≤ 360px */
+@media (max-width: 360px) {
+  .opener-title { font-size: 23px; }
+  .stage-brand  { font-size: 14px; }
+  .wc-name      { font-size: 16px; }
+  .prompt-text  { font-size: 13px; }
+}
+
+/* Touch — área mínima 44px, remove hovers */
+@media (hover: none) and (pointer: coarse) {
+  .prompt-card  { min-height: 52px; }
+  .wz-back      { min-height: 44px; display: inline-flex; align-items: center; }
+  .wine:hover   { border-color: var(--line); box-shadow: none; }
+  .prompt-card:hover { transform: none; box-shadow: none; }
+}
+
+/* Celular landscape */
+@media (max-width: 812px) and (orientation: landscape) and (max-height: 450px) {
+  .thread       { padding: 14px 16px 10px; }
+  .opener-logo  { width: 40px !important; height: 40px !important; max-width: 40px !important; margin-bottom: 10px; }
+  .opener-title { font-size: 24px; margin-bottom: 8px; }
+  .opener-lead  { font-size: 13.5px; margin-bottom: 14px; }
+  .prompt-grid  { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .wc-body      { flex-direction: row; }
+  .wc-img-col   { width: 80px !important; height: auto; border-right: 1px solid var(--line); border-bottom: none; }
+}
+
+/* Rail colapsável (legado) */
 .shell { transition: grid-template-columns .25s var(--ease); }
 .shell.rail-collapsed { grid-template-columns: 0px 1fr; }
-.rail { transition: transform .25s var(--ease), opacity .2s var(--ease); transform: translateX(0); }
+.rail  { transition: transform .25s var(--ease), opacity .2s var(--ease); transform: translateX(0); }
 .shell.rail-collapsed .rail { transform: translateX(-100%); pointer-events: none; opacity: 0; }
