@@ -584,7 +584,29 @@ body::after {
   .wz-option-flag { padding: 11px 14px !important; gap: 8px !important; }
   .wz-flag      { width: 20px !important; height: 15px !important; }
   .wc-body      { flex-direction: column; }
-  .wc-img-col   { width: 100% !important; height: 160px; border-right: none; border-bottom: 1px solid var(--line); }
+  .wc-img-col   {
+    width: 100% !important;
+    height: auto;
+    min-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .wc-img-col .wc-bottle-img {
+    position: relative !important;
+    top: auto; left: auto;
+    width: 100%;
+    height: auto;
+    min-height: 200px;
+    object-fit: contain;
+    object-position: center;
+    background: var(--bg-2);
+  }
+  .wc-img-col .wc-bottle-ph {
+    position: relative !important;
+    top: auto; left: auto;
+    width: 100%;
+    height: 180px;
+  }
   .wc-info-col  { padding: 13px 14px; }
   .wc-name      { font-size: 19px; }
   .wc-maker     { font-size: 13px; }
@@ -614,7 +636,8 @@ body::after {
   .prompt-grid  { gap: 6px; }
   .prompt-card  { padding: 11px 12px; }
   .prompt-text  { font-size: 13.5px; }
-  .wc-img-col   { height: 140px; }
+  .wc-img-col   { min-height: 180px; height: auto; }
+  .wc-img-col .wc-bottle-img { min-height: 180px; }
   .wc-info-col  { padding: 11px 12px; }
   .wc-name      { font-size: 17px; }
   .wc-line      { padding: 7px 12px; gap: 8px; }
