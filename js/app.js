@@ -1208,13 +1208,29 @@ const searchWizard = (() => {
     }
   }
 
+  /* ── Etapa atual → tag de contexto (tipo de bebida em foco) ──────────── */
+  const TIPO_PLURAL = { 'Vinho Tinto': 'Vinhos Tintos', 'Vinho Branco': 'Vinhos Brancos', 'Espumante': 'Espumantes' };
+  function contextTag() {
+    return (TIPO_PLURAL[st.answers.tipo] || 'Vinhos Tintos').toUpperCase();
+  }
+
   /* ── Renderiza etapa ───────────────────────────────────────────────── */
   function renderStep() {
     const thread = document.getElementById('thread');
-    const step   = getFlow()[st.step];
+    const flow   = getFlow();
+    const step   = flow[st.step];
     if (!step) { finish(); return; }
 
-    const pct = Math.round((st.step / getFlow().length) * 100);
+    const total = flow.length;
+    const pad2  = n => String(n).padStart(2, '0');
+
+    const progressDots = flow.map((_, i) => `<span class="wz-progress-dot${i <= st.step ? ' is-done' : ''}"></span>`).join('');
+    const progressBar = `
+      <div class="wz-progress">
+        ${progressDots}
+        <span class="wz-progress-label">Etapa ${pad2(st.step + 1)} / ${pad2(total)}</span>
+      </div>
+      <p class="wz-eyebrow">ETAPA ${pad2(st.step + 1)}</p>`;
 
     const cards = step.options.map(opt => {
       const iconHtml = opt.flag
@@ -1232,15 +1248,14 @@ const searchWizard = (() => {
       </button>`;
     }).join('');
 
-    const backBtn = st.step > 0
-      ? `<button class="wz-back" id="swBack">Voltar</button>` : '';
-
     thread.innerHTML = `
       <div class="opener" id="opener">
-        <img src="logo.png" alt="Empório Cosmopolita" class="opener-logo">
+        ${progressBar}
         <h1 class="opener-title">${step.label}</h1>
         <div class="prompt-grid">${cards}</div>
-        ${backBtn}
+      </div>
+      <div class="wz-footer">
+        <button class="wz-step-back" id="swBack">Voltar</button>
       </div>`;
 
     // Listeners dos cards
@@ -1257,8 +1272,9 @@ const searchWizard = (() => {
       });
     });
 
-    // Voltar
+    // Voltar — na primeira etapa, retorna à tela inicial (hero)
     document.getElementById('swBack')?.addEventListener('click', () => {
+      if (st.step === 0) { renderHero(); return; }
       st.step = Math.max(0, st.step - 1);
       renderStep();
     });
@@ -1365,9 +1381,20 @@ const searchWizard = (() => {
 window.searchWizard = searchWizard;
 
 
+/* ── Hero — tela inicial antes do wizard ───────────────────── */
+function renderHero() {
+  const thread = document.getElementById('thread');
+  thread.innerHTML = `
+    <div class="hero" id="hero">
+      <h1 class="hero-title">Encontre seu<br>próximo <em>rótulo</em></h1>
+      <button class="hero-cta" id="heroStart">Encontrar meu vinho ideal <span aria-hidden="true">→</span></button>
+    </div>`;
+  document.getElementById('heroStart').addEventListener('click', () => searchWizard.start());
+}
+
 /* ── Opener ─────────────────────────────────────────────── */
 function renderOpener() {
-  searchWizard.start();
+  renderHero();
 }
 
 function useSugg(el) {
