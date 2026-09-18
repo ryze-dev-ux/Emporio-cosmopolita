@@ -1086,7 +1086,6 @@ const searchWizard = (() => {
       w.grapes      ? `<div class="wc-line"><span class="wc-line-icon">🍇</span><span class="wc-line-label">Uva</span><span class="wc-line-val">${esc(w.grapes)}</span></div>`         : '',
       w.temperature ? `<div class="wc-line"><span class="wc-line-icon">🌡️</span><span class="wc-line-label">Temperatura</span><span class="wc-line-val">${esc(w.temperature)}</span></div>` : '',
       w.pairing     ? `<div class="wc-line"><span class="wc-line-icon">🍽️</span><span class="wc-line-label">Harmoniza</span><span class="wc-line-val">${esc(w.pairing)}</span></div>` : '',
-      w.tannins     ? `<div class="wc-line"><span class="wc-line-icon">🍾</span><span class="wc-line-label">Taninos</span><span class="wc-line-val">${esc(w.tannins)}</span></div>`     : '',
     ].filter(Boolean).join('');
 
     return `
