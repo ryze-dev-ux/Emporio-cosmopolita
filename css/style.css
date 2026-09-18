@@ -372,7 +372,7 @@ body::after {
   font-family: var(--serif); font-size: 14px; color: var(--gold);
 }
 .wc-name {
-  font-family: 'Momo Trust Display', var(--serif);
+  font-family: var(--serif);
   font-size: 23px; font-weight: 400;
   color: var(--ink); letter-spacing: -.01em; line-height: 1.2;
 }
@@ -433,7 +433,7 @@ body::after {
 .wc-price-tag {
   flex-shrink: 0;
   margin-left: auto;
-  font-family: 'Momo Trust Display', var(--serif);
+  font-family: var(--serif);
   font-size: 21px; font-weight: 400;
   color: var(--wine); letter-spacing: -.01em; white-space: nowrap;
 }
