@@ -433,7 +433,7 @@ body::after {
 .wc-price-tag {
   flex-shrink: 0;
   margin-left: auto;
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: 21px; font-weight: 400;
   color: var(--wine); letter-spacing: -.01em; white-space: nowrap;
 }
