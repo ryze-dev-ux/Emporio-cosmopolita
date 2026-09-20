@@ -381,7 +381,7 @@ body::after {
 .wc-maker { font-size: 13.5px; color: var(--ink-3); margin-top: 5px; }
 .wc-country { display: flex; align-items: center; gap: 7px; margin-top: 6px; font-size: 12.5px; color: var(--ink-3); letter-spacing: .03em; }
 .wc-flag { display: inline-block; width: 16px; height: 12px; object-fit: cover; box-shadow: 0 0 0 1px var(--line); }
-.wz-flag { display: inline-block; width: 24px; height: 18px; object-fit: cover; box-shadow: 0 0 0 1px var(--line); }
+.wz-flag { display: inline-block; width: 24px; height: 18px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.1); vertical-align: middle; flex-shrink: 0; }
 
 .wc-cb-flag {
   display: inline-flex; align-items: center; gap: 5px;

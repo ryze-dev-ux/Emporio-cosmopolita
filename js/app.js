@@ -1145,9 +1145,22 @@ const searchWizard = (() => {
       return;
     }
 
-    // Exibe todos os vinhos que satisfazem os filtros, ordenados por preço
+    // Ordena por preço e sorteia 2 cards representativos (1 mais barato, 1 intermediário/premium)
     const sorted = [...wines].sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
-    const cardsHtml = sorted.map(w => renderCard(w)).join('');
+
+    // Seleciona 2 cards: um da metade inferior e um da metade superior de preço
+    function pickTwo(arr) {
+      if (arr.length <= 2) return arr;
+      const mid = Math.floor(arr.length / 2);
+      const half1 = arr.slice(0, mid);
+      const half2 = arr.slice(mid);
+      const pick1 = half1[Math.floor(Math.random() * half1.length)];
+      const pick2 = half2[Math.floor(Math.random() * half2.length)];
+      return [pick1, pick2];
+    }
+
+    const display = pickTwo(sorted);
+    const cardsHtml = display.map(w => renderCard(w)).join('');
 
     const relaxBanner = relaxNote ? `
       <div class="sw-relax-banner">
@@ -1155,10 +1168,14 @@ const searchWizard = (() => {
         <span>Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.</span>
       </div>` : '';
 
+    const totalTxt = sorted.length > 2
+      ? `${sorted.length} opções disponíveis — mostrando 2 sugestões`
+      : `${sorted.length} resultado${sorted.length !== 1 ? 's' : ''} encontrado${sorted.length !== 1 ? 's' : ''}`;
+
     thread.innerHTML = `
       <div class="sw-wrap">
         ${relaxBanner}
-        <p class="sw-results-count">${sorted.length} resultado${sorted.length !== 1 ? 's' : ''} encontrado${sorted.length !== 1 ? 's' : ''}</p>
+        <p class="sw-results-count">${totalTxt}</p>
         <div class="sw-trio" id="swCards">${cardsHtml}</div>
         <div class="sw-results-footer">
           <button class="wz-back" id="swRestart">Nova pesquisa</button>
@@ -1233,7 +1250,7 @@ const searchWizard = (() => {
 
     const cards = step.options.map(opt => {
       const iconHtml = opt.flag
-        ? `<img src="https://flagcdn.com/24x18/${opt.flag}.png" srcset="https://flagcdn.com/48x36/${opt.flag}.png 2x" width="24" height="18" class="wz-flag" alt="${opt.label}">`
+        ? `<img src="https://flagcdn.com/32x24/${opt.flag}.png" srcset="https://flagcdn.com/64x48/${opt.flag}.png 2x" width="24" height="18" class="wz-flag" alt="${opt.label}" style="display:block;width:24px;height:18px;object-fit:cover;border-radius:2px;">`
         : '';
       // Marca a opção já selecionada
       const currentAns = st.answers[step.key];
