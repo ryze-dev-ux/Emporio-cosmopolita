@@ -968,11 +968,23 @@ const searchWizard = (() => {
     ],
   };
 
+  // Harmonização para espumantes — sem carnes vermelhas
+  const STEP_HARMONIZACAO_ESPUMANTE = {
+    key: 'harmonizacao', label: 'Harmonização', icon: '🍽️',
+    options: [
+      { label: 'Carnes Brancas'        },
+      { label: 'Massas e Risotos'      },
+      { label: 'Queijos e Frios'       },
+      { label: 'Peixes e Frutos do Mar'},
+      { label: 'Sem preferência', any: true },
+    ],
+  };
+
   /* ── Fluxos por tipo de bebida ─────────────────────────────────────── */
   const FLOW_TINTO     = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_TINTO,  STEP_PAIS, STEP_HARMONIZACAO];
   const FLOW_BRANCO    = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_BRANCO, STEP_PAIS, STEP_HARMONIZACAO];
   const FLOW_VINHO     = FLOW_TINTO; // fallback
-  const FLOW_ESPUMANTE  = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_PAIS_ESPUMANTE, STEP_HARMONIZACAO];
+  const FLOW_ESPUMANTE  = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_PAIS_ESPUMANTE, STEP_HARMONIZACAO_ESPUMANTE];
 
   /* ── Retorna o fluxo ativo baseado na resposta de "tipo" ───────────── */
   function getFlow() {
@@ -1060,7 +1072,8 @@ const searchWizard = (() => {
         if (norm(w.country || '') !== norm(ans.pais)) return false;
       }
       // Harmonização — só filtra se o vinho tem pairing preenchido
-      if (!relaxed && ans.harmonizacao && !STEP_HARMONIZACAO.options.find(o => o.label === ans.harmonizacao)?.any && w.pairing) {
+      const harmStep = (ans.tipo === 'Espumante') ? STEP_HARMONIZACAO_ESPUMANTE : STEP_HARMONIZACAO;
+      if (!relaxed && ans.harmonizacao && !harmStep.options.find(o => o.label === ans.harmonizacao)?.any && w.pairing) {
         const wp = norm(w.pairing);
         const hterms = norm(ans.harmonizacao).split(' e ').flatMap(t => t.split(' ')).filter(t => t.length > 3);
         if (!hterms.some(t => wp.includes(t))) return false;
