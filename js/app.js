@@ -941,6 +941,19 @@ const searchWizard = (() => {
       { label: 'África do Sul',flag: 'za' },
       { label: 'Austrália',    flag: 'au' },
       { label: 'Estados Unidos',flag:'us' },
+      { label: 'Líbano',       flag: 'lb' },
+      { label: 'Israel',       flag: 'il' },
+    ],
+  };
+
+  // País exclusivo para espumantes
+  const STEP_PAIS_ESPUMANTE = {
+    key: 'pais', label: 'País de Origem', icon: '🌍',
+    options: [
+      { label: 'Sem preferência', any: true },
+      { label: 'Brasil',  flag: 'br' },
+      { label: 'França',  flag: 'fr' },
+      { label: 'Espanha', flag: 'es' },
     ],
   };
   const STEP_HARMONIZACAO = {
@@ -959,7 +972,7 @@ const searchWizard = (() => {
   const FLOW_TINTO     = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_TINTO,  STEP_PAIS, STEP_HARMONIZACAO];
   const FLOW_BRANCO    = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_BRANCO, STEP_PAIS, STEP_HARMONIZACAO];
   const FLOW_VINHO     = FLOW_TINTO; // fallback
-  const FLOW_ESPUMANTE  = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_PAIS, STEP_HARMONIZACAO];
+  const FLOW_ESPUMANTE  = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_PAIS_ESPUMANTE, STEP_HARMONIZACAO];
 
   /* ── Retorna o fluxo ativo baseado na resposta de "tipo" ───────────── */
   function getFlow() {
@@ -1042,7 +1055,8 @@ const searchWizard = (() => {
         if (!terms.some(t => wg.includes(t))) return false;
       }
       // País (ignorado se relaxado)
-      if (!relaxed && ans.pais && !STEP_PAIS.options.find(o => o.label === ans.pais)?.any) {
+      const paisStep = (ans.tipo === 'Espumante') ? STEP_PAIS_ESPUMANTE : STEP_PAIS;
+      if (!relaxed && ans.pais && !paisStep.options.find(o => o.label === ans.pais)?.any) {
         if (norm(w.country || '') !== norm(ans.pais)) return false;
       }
       // Harmonização — só filtra se o vinho tem pairing preenchido
@@ -1145,22 +1159,26 @@ const searchWizard = (() => {
       return;
     }
 
-    // Ordena por preço e sorteia 2 cards representativos (1 mais barato, 1 intermediário/premium)
+    // Ordena por preço e seleciona 3 cards: custo-benefício, intermediário e premium
     const sorted = [...wines].sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
 
-    // Seleciona 2 cards: um da metade inferior e um da metade superior de preço
-    function pickTwo(arr) {
-      if (arr.length <= 2) return arr;
-      const mid = Math.floor(arr.length / 2);
-      const half1 = arr.slice(0, mid);
-      const half2 = arr.slice(mid);
-      const pick1 = half1[Math.floor(Math.random() * half1.length)];
-      const pick2 = half2[Math.floor(Math.random() * half2.length)];
-      return [pick1, pick2];
+    function pickThree(arr) {
+      if (arr.length <= 3) return arr;
+      const third = Math.floor(arr.length / 3);
+      const faixaCB  = arr.slice(0, third);
+      const faixaMed = arr.slice(third, third * 2);
+      const faixaPrem= arr.slice(third * 2);
+      const rand = a => a[Math.floor(Math.random() * a.length)];
+      // Garante sem repetição
+      const cb   = rand(faixaCB);
+      const med  = rand(faixaMed.filter(w => w.id !== cb.id) .length ? faixaMed.filter(w => w.id !== cb.id)  : faixaMed);
+      const prem = rand(faixaPrem.filter(w => w.id !== cb.id && w.id !== med.id).length ? faixaPrem.filter(w => w.id !== cb.id && w.id !== med.id) : faixaPrem);
+      return [cb, med, prem];
     }
 
-    const display = pickTwo(sorted);
-    const cardsHtml = display.map(w => renderCard(w)).join('');
+    const display = pickThree(sorted);
+    const labels  = ['💚 Custo-Benefício', '🥂 Intermediário', '✨ Premium'];
+    const cardsHtml = display.map((w, i) => renderCard(w, labels[i])).join('');
 
     const relaxBanner = relaxNote ? `
       <div class="sw-relax-banner">
@@ -1168,8 +1186,8 @@ const searchWizard = (() => {
         <span>Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.</span>
       </div>` : '';
 
-    const totalTxt = sorted.length > 2
-      ? `${sorted.length} opções disponíveis — mostrando 2 sugestões`
+    const totalTxt = sorted.length > 3
+      ? `${sorted.length} opções disponíveis — mostrando 3 sugestões`
       : `${sorted.length} resultado${sorted.length !== 1 ? 's' : ''} encontrado${sorted.length !== 1 ? 's' : ''}`;
 
     thread.innerHTML = `
