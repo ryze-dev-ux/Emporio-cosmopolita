@@ -308,8 +308,7 @@ async function _handler(event) {
         const esc = s => '"' + String(s||'').replace(/"/g,'""') + '"';
         lines.push([w.id, esc(w.name), esc(w.type), esc(w.country)].join(','));
       }
-      const csv = lines.join('
-');
+      const csv = lines.join(String.fromCharCode(13,10));
       return {
         statusCode: 200,
         headers: {
