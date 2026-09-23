@@ -1,7 +1,6 @@
 {
   "version": 2,
-  "installCommand": "npm install && cd api && npm install",
-  "buildCommand": "npm install",
+  "buildCommand": "npm install && cd api && npm install",
   "outputDirectory": ".",
   "functions": {
     "api/*.js": {

@@ -324,8 +324,8 @@ async function _handler(event) {
     return reply(400, { error:'action invalida. Use: catalog, debug, images ou ids' });
 
   } catch (err) {
-    console.error('[gdrive]', err.message);
-    return reply(500, { error: err.message });
+    console.error('[gdrive] ERRO:', err.message, err.stack);
+    return reply(500, { error: err.message, stack: err.stack });
   }
 };
 
