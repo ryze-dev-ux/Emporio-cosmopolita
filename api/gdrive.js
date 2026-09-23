@@ -151,7 +151,20 @@ function parseXlsx(buf) {
     return (v !== null && v !== undefined) ? String(v).trim() : fb;
   };
 
-  const parseNum = s => parseFloat(String(s).replace(/[^\d,]/g,'').replace(',','.')) || 0;
+  const parseNum = s => {
+    const str = String(s || '').trim();
+    // Remove R$, espaços e outros símbolos, mas preserva ponto e vírgula
+    const cleaned = str.replace(/[^\d.,]/g, '');
+    // Se tem vírgula como decimal (ex: "400,00") → substitui por ponto
+    // Se tem ponto como milhar (ex: "1.400,00") → remove ponto primeiro
+    let num;
+    if (/,/.test(cleaned)) {
+      num = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
+    } else {
+      num = parseFloat(cleaned);
+    }
+    return isNaN(num) ? 0 : num;
+  };
 
   const wines = [];
   for (let i = hIdx + 1; i < rows.length; i++) {

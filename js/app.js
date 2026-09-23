@@ -1025,59 +1025,85 @@ const searchWizard = (() => {
   };
 
   /* ── Filtros ───────────────────────────────────────────────────────── */
-  function applyFilters(wines, ans, relaxed) {
+  function applyFilters(wines, ans, opts) {
+    // opts pode ser objeto de flags: { skipHarm, skipPais, skipUva, skipEstilo, skipPreco }
+    if (opts === true) opts = { skipPais: true, skipHarm: true }; // legado relaxed=true
+    const o = opts || {};
+
     return wines.filter(w => {
-      // Preço
-      const pr = ans.price;
-      if (pr) {
+
+      /* ── PREÇO ──────────────────────────────────────────────────────── */
+      if (!o.skipPreco && ans.price) {
         const cv = w.cost_value || 0;
-        if (cv < pr.min || cv > pr.max) return false;
+        if (cv < ans.price.min || cv > ans.price.max) return false;
       }
-      // Tipo — mapeia "Vinho Tinto" → "tinto", "Vinho Branco" → "branco", "Espumante" → "espumante"
+
+      /* ── TIPO ───────────────────────────────────────────────────────── */
+      // NUNCA relaxado — tipo é obrigatório
       if (ans.tipo && w.type) {
         const wt  = norm(w.type);
-        const map = { 'vinho tinto': 'tinto', 'vinho branco': 'branco', 'espumante': 'espumante' };
-        const keyword = map[norm(ans.tipo)] || norm(ans.tipo).replace('vinho ', '');
-        if (!wt.startsWith(keyword) && !wt.includes(keyword)) return false;
+        const TIPO_MAP = {
+          'vinho tinto':  ['tinto'],
+          'vinho branco': ['branco'],
+          'espumante':    ['espumante', 'brut', 'demi', 'moscatel', 'prosecco', 'cava', 'prossecco'],
+        };
+        const keywords = TIPO_MAP[norm(ans.tipo)] || [norm(ans.tipo).replace('vinho ','')];
+        if (!keywords.some(k => wt.includes(k))) return false;
       }
-      // Estilo — para vinhos: "Seco", "Suave", "Meio Seco" no campo type
-      //         para espumantes: "Brut", "Demi-sec", "Prosecco", "Moscatel", "Seco"
-      if (ans.estilo && w.type) {
+
+      /* ── ESTILO ─────────────────────────────────────────────────────── */
+      if (!o.skipEstilo && ans.estilo && w.type) {
         const wt = norm(w.type);
-        const es = norm(ans.estilo);
         const estiloStep = ans.tipo === 'Espumante' ? STEP_ESTILO_ESPUMANTE : STEP_ESTILO_VINHO;
-        const estiloAny  = estiloStep.options.find(o => o.label === ans.estilo)?.any;
+        const estiloAny  = estiloStep.options.find(op => op.label === ans.estilo)?.any;
         if (!estiloAny) {
-          // Para espumantes "Rosé": campo type contém "rosé" ou "rose"
-          // Para "Brut": contém "brut"
-          // Para "Demi-sec": contém "demi" ou "meio"
-          // Para vinhos: "seco", "suave", "meio seco" no campo type
-          const esMap = { 'demi-sec': ['demi', 'meio seco'], 'rose': ['rose', 'rosé'], 'moscatel': ['moscatel'], };
-          const alts  = esMap[es] || [es];
-          if (!alts.some(a => wt.includes(norm(a)))) return false;
+          const ESTILO_MAP = {
+            'seco':      ['seco'],
+            'suave':     ['suave'],
+            'meio seco': ['meio seco', 'demi sec', 'demi-sec'],
+            'brut':      ['brut'],
+            'demi-sec':  ['demi sec', 'demi-sec', 'meio seco'],
+            'moscatel':  ['moscatel'],
+            'rose':      ['rose', 'rosé'],
+            'prosecco':  ['prosecco', 'prossecco'],
+          };
+          const alts = ESTILO_MAP[norm(ans.estilo)] || [norm(ans.estilo)];
+          if (!alts.some(a => wt.includes(a))) return false;
         }
       }
-      // Uva — usa step correto por tipo; ignora se "Sem preferência"
-      const uvaStep = ans.tipo === 'Vinho Branco' ? STEP_UVA_BRANCO : STEP_UVA_TINTO;
-      const uvaAny  = uvaStep.options.find(o => o.label === ans.uva)?.any;
-      if (ans.uva && !uvaAny && norm(ans.uva) !== 'blend de uvas' && w.grapes) {
-        const wg    = norm(w.grapes);
-        const terms = norm(ans.uva).replace('shiraz  syrah','syrah shiraz')
-                        .split(/[\s/]+/).filter(t => t.length > 2);
-        if (!terms.some(t => wg.includes(t))) return false;
+
+      /* ── UVA ────────────────────────────────────────────────────────── */
+      if (!o.skipUva && ans.uva && w.grapes) {
+        const uvaStep = (ans.tipo === 'Vinho Branco' || ans.tipo === 'Espumante')
+          ? STEP_UVA_BRANCO : STEP_UVA_TINTO;
+        const uvaAny = uvaStep.options.find(op => op.label === ans.uva)?.any;
+        if (!uvaAny) {
+          const wg    = norm(w.grapes);
+          const terms = norm(ans.uva).split(/[\s/,]+/).filter(t => t.length > 2);
+          if (!terms.some(t => wg.includes(t))) return false;
+        }
       }
-      // País (ignorado se relaxado)
-      const paisStep = (ans.tipo === 'Espumante') ? STEP_PAIS_ESPUMANTE : STEP_PAIS;
-      if (!relaxed && ans.pais && !paisStep.options.find(o => o.label === ans.pais)?.any) {
-        if (norm(w.country || '') !== norm(ans.pais)) return false;
+
+      /* ── PAÍS ───────────────────────────────────────────────────────── */
+      if (!o.skipPais && ans.pais) {
+        const paisStep = ans.tipo === 'Espumante' ? STEP_PAIS_ESPUMANTE : STEP_PAIS;
+        const paisAny  = paisStep.options.find(op => op.label === ans.pais)?.any;
+        if (!paisAny) {
+          if (norm(w.country || '') !== norm(ans.pais)) return false;
+        }
       }
-      // Harmonização — só filtra se o vinho tem pairing preenchido
-      const harmStep = (ans.tipo === 'Espumante') ? STEP_HARMONIZACAO_ESPUMANTE : STEP_HARMONIZACAO;
-      if (!relaxed && ans.harmonizacao && !harmStep.options.find(o => o.label === ans.harmonizacao)?.any && w.pairing) {
-        const wp = norm(w.pairing);
-        const hterms = norm(ans.harmonizacao).split(' e ').flatMap(t => t.split(' ')).filter(t => t.length > 3);
-        if (!hterms.some(t => wp.includes(t))) return false;
+
+      /* ── HARMONIZAÇÃO ───────────────────────────────────────────────── */
+      if (!o.skipHarm && ans.harmonizacao && w.pairing) {
+        const harmStep = ans.tipo === 'Espumante' ? STEP_HARMONIZACAO_ESPUMANTE : STEP_HARMONIZACAO;
+        const harmAny  = harmStep.options.find(op => op.label === ans.harmonizacao)?.any;
+        if (!harmAny) {
+          const wp     = norm(w.pairing);
+          const hterms = norm(ans.harmonizacao).split(/[\se]+/).filter(t => t.length > 3);
+          if (!hterms.some(t => wp.includes(t))) return false;
+        }
       }
+
       return true;
     });
   }
@@ -1347,67 +1373,41 @@ const searchWizard = (() => {
     }
     const wines = (catalog && catalog.wines && catalog.wines.length) ? catalog.wines : [];
 
-    // Tenta com todos os filtros
-    let result = applyFilters(wines, st.answers, false);
+    // Filtro completo primeiro
+    let result = applyFilters(wines, st.answers, {});
     let relaxNote = '';
+    let relaxed = false;
 
-    // Relaxa progressivamente até ter ao menos 3 resultados
     if (result.length < 3) {
-      // 1. Remove harmonização
-      const a1 = Object.assign({}, st.answers, { harmonizacao: null });
-      result = applyFilters(wines, a1, false);
-      relaxNote = 'Mostrando sugestões próximas ao seu perfil.';
+      // Passo 1: remove harmonização
+      result = applyFilters(wines, st.answers, { skipHarm: true });
+      relaxed = true;
+      relaxNote = 'Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.';
     }
     if (result.length < 3) {
-      // 2. Remove país também
-      const a2 = Object.assign({}, st.answers, { harmonizacao: null, pais: null });
-      result = applyFilters(wines, a2, false);
-      relaxNote = 'Não encontramos exatamente, mas aqui estão os mais próximos.';
+      // Passo 2: remove harmonização + país
+      result = applyFilters(wines, st.answers, { skipHarm: true, skipPais: true });
+      relaxNote = 'Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.';
     }
     if (result.length < 3) {
-      // 3. Remove uva também
-      const a3 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null });
-      result = applyFilters(wines, a3, false);
-      relaxNote = 'Sugestões baseadas no tipo e faixa de preço escolhidos.';
+      // Passo 3: remove harmonização + país + uva
+      result = applyFilters(wines, st.answers, { skipHarm: true, skipPais: true, skipUva: true });
+      relaxNote = 'Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.';
     }
     if (result.length < 3) {
-      // 4. Remove estilo — mantém só preço e tipo
-      const a4 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null, estilo: null });
-      result = applyFilters(wines, a4, false);
-      relaxNote = 'Sugestões baseadas no tipo e faixa de preço escolhidos.';
+      // Passo 4: remove harmonização + país + uva + estilo
+      result = applyFilters(wines, st.answers, { skipHarm: true, skipPais: true, skipUva: true, skipEstilo: true });
+      relaxNote = 'Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.';
     }
     if (result.length < 3) {
-      // 5. Remove estilo — mantém tipo e preço (NUNCA remove o tipo selecionado)
-      const a5 = Object.assign({}, st.answers, { harmonizacao: null, pais: null, uva: null, estilo: null });
-      result = applyFilters(wines, a5, false);
-      relaxNote = 'Sugestões baseadas no tipo e faixa de preço escolhidos.';
+      // Passo 5: mantém só tipo + preço
+      result = applyFilters(wines, st.answers, { skipHarm: true, skipPais: true, skipUva: true, skipEstilo: true, skipPreco: false });
+      relaxNote = 'Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.';
     }
     if (result.length < 3) {
-      // 6. Só preço + tipo — último recurso, mas mantém tipo
-      result = wines.filter(w => {
-        const cv = w.cost_value || 0;
-        const pr = st.answers.price;
-        if (pr && (cv < pr.min || cv > pr.max)) return false;
-        if (st.answers.tipo && w.type) {
-          const map = { 'vinho tinto': 'tinto', 'vinho branco': 'branco', 'espumante': 'espumante' };
-          const keyword = map[st.answers.tipo.toLowerCase()] || st.answers.tipo.toLowerCase();
-          if (!w.type.toLowerCase().includes(keyword)) return false;
-        }
-        return cv > 1;
-      });
-      relaxNote = 'Sugestões disponíveis na faixa de preço escolhida.';
-    }
-    if (result.length < 3) {
-      // 7. Só tipo, sem preço — garante que sempre mostra o tipo certo
-      result = wines.filter(w => {
-        if (st.answers.tipo && w.type) {
-          const map = { 'vinho tinto': 'tinto', 'vinho branco': 'branco', 'espumante': 'espumante' };
-          const keyword = map[st.answers.tipo.toLowerCase()] || st.answers.tipo.toLowerCase();
-          if (!w.type.toLowerCase().includes(keyword)) return false;
-        }
-        return (w.cost_value || 0) > 1;
-      });
-      relaxNote = 'Aqui estão nossas sugestões de ' + (st.answers.tipo || 'bebidas') + '.';
+      // Passo 6: só tipo, sem preço — último recurso
+      result = applyFilters(wines, st.answers, { skipHarm: true, skipPais: true, skipUva: true, skipEstilo: true, skipPreco: true });
+      relaxNote = 'Não encontramos resultados com todos os filtros selecionados. Exibindo opções similares.';
     }
 
     // Ordena por preço — sem limite artificial
