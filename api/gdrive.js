@@ -110,6 +110,7 @@ function parseXlsx(buf) {
   const headers = rows[hIdx].map(h => String(h||'').trim());
 
   const COLS = {
+    id:          ['id'],
     name:        ['produto','nome','name'],
     qty:         ['qtd atual','quantidade','qty','estoque','qtd','saldo'],
     cost:        ['preco','custo medio','price'],
@@ -153,12 +154,12 @@ function parseXlsx(buf) {
     const name = rawName.replace(/\s*[-]\s*\d+\s*(ml|l)\s*$/i,'').trim();
     const hasQty = map['qty'] !== undefined;
     const qty    = parseNum(get(row,'qty','0'));
-    if (hasQty && qty <= 0) continue;
     const costRaw = get(row,'cost');
     const costVal = parseNum(costRaw);
-    if (costVal < 1) continue;
+    // Planilha já é pré-filtrada — não bloquear por qty ou preço
+    const wineId = get(row,'id','');
     wines.push({
-      id:           'r'+i,
+      id:           wineId ? String(parseInt(wineId)) : String(i),
       name:         name,
       winery:       get(row,'winery'),
       producer:     get(row,'winery'),
