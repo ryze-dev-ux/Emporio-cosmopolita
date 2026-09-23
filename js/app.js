@@ -1094,12 +1094,12 @@ const searchWizard = (() => {
 
   function renderCard(w, label) {
     let imgUrl = null;
-    try { imgUrl = wineImageUrl(w.name); } catch {}
+    try { imgUrl = wineImageUrl(w.id, w.name); } catch {}
 
     const imgEl = imgUrl
       ? `<img src="${imgUrl}" alt="${esc(w.name)}" class="wc-bottle-img" loading="lazy"
            onerror="if(!this.dataset.tried){this.dataset.tried=1;const id=this.dataset.id;if(id){this.src='/api/gdrive?action=img&id='+id;}else{this.style.display='none';}}else{this.style.display='none';}">`
-      : `<div class="wc-bottle-ph" data-wine="${esc(w.name)}">🍷</div>`;
+      : `<div class="wc-bottle-ph" data-wine="${esc(w.name)}" data-id="${esc(w.id)}">🍷</div>`;
 
     const cc = COUNTRY_CC[norm(w.country || '')];
     const flagHtml = flagImg(cc, w.country || '');
@@ -1220,7 +1220,7 @@ const searchWizard = (() => {
       if (!map || !Object.keys(map).length) return;
       window._driveImages = map;
       document.querySelectorAll('.wc-bottle-ph[data-wine]').forEach(el => {
-        const url = wineImageUrl(el.dataset.wine);
+        const url = wineImageUrl(el.dataset.id, el.dataset.wine);
         if (url) {
           const img = document.createElement('img');
           img.src = url;
@@ -1502,47 +1502,11 @@ function normWineName(name) {
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
 }
-function wineImageUrl(name) {
+function wineImageUrl(id, name) {
   const map = window._driveImages || {};
-
-  // Normalização idêntica ao normKey do gdrive.js
-  const toKey = s => String(s).toLowerCase().trim()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-
-  // Remove sufixo de volume do nome do vinho (ex: " - 750ml", " - 375ml")
-  const nameNoVol = String(name).trim()
-    .replace(/\s*-\s*\d+(\s*ml|\s*l|\s*litros?)\s*$/i, '').trim();
-
-  const keyFull = toKey(name);       // com volume se vier
-  const keyBase = toKey(nameNoVol);  // sem volume
-
-  const keys = Object.keys(map);
-
-  // 1. Match exato — nome completo bate com chave do mapa
-  if (map[keyFull]) return map[keyFull];
-  if (map[keyBase]) return map[keyBase];
-
-  // 2. Nome do vinho sem volume === chave do arquivo sem sufixo de volume
-  //    Extrai o nome da chave removendo o padrão "_-_NNNml" ou "_NNNml" do final
-  // Match exato: remove sufixo de volume da chave e compara com keyBase
-  // Tenta primeiro a chave que inclui o volume do nome original
-  const keyFullVol = toKey(name); // com volume
-  const exactFull = keys.find(k => k === keyFullVol);
-  if (exactFull) return map[exactFull];
-
-  // Remove sufixo de volume da chave do mapa e compara com keyBase
-  const volumeSuffixes = /(_-_\d+(?:_5)?(?:ml|l|litros?)|_\d+(?:_5)?(?:ml|l|litros?))$/i;
-  // Filtra apenas chaves cujo nome base é EXATAMENTE igual ao keyBase
-  const candidates = keys.filter(k => k.replace(volumeSuffixes, '') === keyBase);
-  if (candidates.length === 1) return map[candidates[0]];
-  if (candidates.length > 1) {
-    // Se há múltiplos (ex: 375ml e 750ml), prefere 750ml
-    const prefer = candidates.find(k => k.includes('_750ml') || k.includes('_-_750ml')) || candidates[0];
-    return map[prefer];
-  }
-
-  // SEM FALLBACK — placeholder se não encontrou exatamente
+  // Lógica direta: ID sequencial do vinho → chave numérica da imagem
+  if (id && map[String(id)]) return map[String(id)];
+  // Sem fallback — retorna null se não encontrar
   return null;
 }
 

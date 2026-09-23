@@ -263,8 +263,9 @@ async function _handler(event) {
       const files = await listFolder(folderId, token);
       const imageMap = {};
       for (const f of files) {
-        // Proxy autenticado como URL principal — mais confiável que thumbnailLink
-        imageMap[normKey(f.name)] = '/api/gdrive?action=img&id=' + f.id;
+        // Chave = nome do arquivo sem extensão (ex: "1.png" → "1")
+        const key = f.name.replace(/\.[^.]+$/, '').trim();
+        imageMap[key] = '/api/gdrive?action=img&id=' + f.id;
       }
       return reply(200, { images: imageMap, count: files.length });
     }
@@ -275,10 +276,15 @@ async function _handler(event) {
       if (!fileId) return reply(400, { error: 'id obrigatorio' });
       try {
         const buf = await driveGet('/drive/v3/files/'+fileId+'?alt=media', token);
+        // Detecta formato pelo magic bytes do buffer
+        let mime = 'image/jpeg';
+        if (buf[0]===0x89 && buf[1]===0x50) mime = 'image/png';
+        else if (buf[0]===0x52 && buf[1]===0x49 && buf[8]===0x57) mime = 'image/webp';
+        else if (buf[0]===0x47 && buf[1]===0x49) mime = 'image/gif';
         return {
           statusCode: 200,
           headers: {
-            'Content-Type': 'image/jpeg',
+            'Content-Type': mime,
             'Cache-Control': 'public, max-age=86400',
             'Access-Control-Allow-Origin': '*',
           },
@@ -290,7 +296,31 @@ async function _handler(event) {
       }
     }
 
-    return reply(400, { error:'action invalida. Use: catalog, debug ou images' });
+    if (action === 'ids') {
+      const sheetId = process.env.GDRIVE_SHEET_ID;
+      if (!sheetId) return reply(503, { error:'GDRIVE_SHEET_ID nao configurada' });
+      const buf    = await downloadFile(sheetId, token);
+      const result = parseXlsx(buf);
+      // Gera CSV: id,nome,tipo,pais
+      const lines  = ['id,nome,tipo,pais'];
+      for (const w of result.wines) {
+        const esc = s => '"' + String(s||'').replace(/"/g,'""') + '"';
+        lines.push([w.id, esc(w.name), esc(w.type), esc(w.country)].join(','));
+      }
+      const csv = lines.join('
+');
+      return {
+        statusCode: 200,
+        headers: {
+          ...CORS,
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="cosmos-ids.csv"',
+        },
+        body: csv,
+      };
+    }
+
+    return reply(400, { error:'action invalida. Use: catalog, debug, images ou ids' });
 
   } catch (err) {
     console.error('[gdrive]', err.message);
