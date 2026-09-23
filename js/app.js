@@ -1008,8 +1008,15 @@ const searchWizard = (() => {
   }
 
   function fmtPrice(w) {
-    const num = w.cost_value || 0;
-    if (num > 0) return 'R$ ' + num.toFixed(2).replace('.', ',');
+    const num = parseFloat(w.cost_value) || 0;
+    if (num > 0) {
+      // Formata com separador de milhar e 2 casas decimais: 1400 → R$ 1.400,00
+      return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    // Fallback: tenta usar cost_display se disponível
+    if (w.cost_display && w.cost_display !== '0' && w.cost_display !== '0.01') {
+      return 'R$ ' + w.cost_display;
+    }
     return '—';
   }
 
@@ -1051,57 +1058,43 @@ const searchWizard = (() => {
         if (!keywords.some(k => wt.includes(k))) return false;
       }
 
+      /* ── helper: verifica se a resposta é "qualquer" ─────────────── */
+      const isAny = v => !v || norm(v) === 'sem preferencia' || norm(v) === 'sem preferencia';
+
       /* ── ESTILO ─────────────────────────────────────────────────────── */
-      if (!o.skipEstilo && ans.estilo && w.type) {
+      if (!o.skipEstilo && ans.estilo && !isAny(ans.estilo) && w.type) {
         const wt = norm(w.type);
-        const estiloStep = ans.tipo === 'Espumante' ? STEP_ESTILO_ESPUMANTE : STEP_ESTILO_VINHO;
-        const estiloAny  = estiloStep.options.find(op => op.label === ans.estilo)?.any;
-        if (!estiloAny) {
-          const ESTILO_MAP = {
-            'seco':      ['seco'],
-            'suave':     ['suave'],
-            'meio seco': ['meio seco', 'demi sec', 'demi-sec'],
-            'brut':      ['brut'],
-            'demi-sec':  ['demi sec', 'demi-sec', 'meio seco'],
-            'moscatel':  ['moscatel'],
-            'rose':      ['rose', 'rosé'],
-            'prosecco':  ['prosecco', 'prossecco'],
-          };
-          const alts = ESTILO_MAP[norm(ans.estilo)] || [norm(ans.estilo)];
-          if (!alts.some(a => wt.includes(a))) return false;
-        }
+        const ESTILO_MAP = {
+          'seco':      ['seco'],
+          'suave':     ['suave'],
+          'meio seco': ['meio seco', 'demi sec', 'demi-sec'],
+          'brut':      ['brut'],
+          'demi-sec':  ['demi sec', 'demi-sec', 'meio seco'],
+          'moscatel':  ['moscatel'],
+          'rose':      ['rose', 'rose'],
+          'prosecco':  ['prosecco', 'prossecco'],
+        };
+        const alts = ESTILO_MAP[norm(ans.estilo)] || [norm(ans.estilo)];
+        if (!alts.some(a => wt.includes(a))) return false;
       }
 
       /* ── UVA ────────────────────────────────────────────────────────── */
-      if (!o.skipUva && ans.uva && w.grapes) {
-        const uvaStep = (ans.tipo === 'Vinho Branco' || ans.tipo === 'Espumante')
-          ? STEP_UVA_BRANCO : STEP_UVA_TINTO;
-        const uvaAny = uvaStep.options.find(op => op.label === ans.uva)?.any;
-        if (!uvaAny) {
-          const wg    = norm(w.grapes);
-          const terms = norm(ans.uva).split(/[\s/,]+/).filter(t => t.length > 2);
-          if (!terms.some(t => wg.includes(t))) return false;
-        }
+      if (!o.skipUva && ans.uva && !isAny(ans.uva) && w.grapes) {
+        const wg    = norm(w.grapes);
+        const terms = norm(ans.uva).split(/[\s/,]+/).filter(t => t.length > 2);
+        if (!terms.some(t => wg.includes(t))) return false;
       }
 
       /* ── PAÍS ───────────────────────────────────────────────────────── */
-      if (!o.skipPais && ans.pais) {
-        const paisStep = ans.tipo === 'Espumante' ? STEP_PAIS_ESPUMANTE : STEP_PAIS;
-        const paisAny  = paisStep.options.find(op => op.label === ans.pais)?.any;
-        if (!paisAny) {
-          if (norm(w.country || '') !== norm(ans.pais)) return false;
-        }
+      if (!o.skipPais && ans.pais && !isAny(ans.pais)) {
+        if (norm(w.country || '') !== norm(ans.pais)) return false;
       }
 
       /* ── HARMONIZAÇÃO ───────────────────────────────────────────────── */
-      if (!o.skipHarm && ans.harmonizacao && w.pairing) {
-        const harmStep = ans.tipo === 'Espumante' ? STEP_HARMONIZACAO_ESPUMANTE : STEP_HARMONIZACAO;
-        const harmAny  = harmStep.options.find(op => op.label === ans.harmonizacao)?.any;
-        if (!harmAny) {
-          const wp     = norm(w.pairing);
-          const hterms = norm(ans.harmonizacao).split(/[\se]+/).filter(t => t.length > 3);
-          if (!hterms.some(t => wp.includes(t))) return false;
-        }
+      if (!o.skipHarm && ans.harmonizacao && !isAny(ans.harmonizacao) && w.pairing) {
+        const wp     = norm(w.pairing);
+        const hterms = norm(ans.harmonizacao).split(/[\se]+/).filter(t => t.length > 3);
+        if (!hterms.some(t => wp.includes(t))) return false;
       }
 
       return true;
@@ -1202,21 +1195,24 @@ const searchWizard = (() => {
     const sorted = [...wines].sort((a, b) => (a.cost_value || 0) - (b.cost_value || 0));
 
     function pickThree(arr) {
-      if (arr.length <= 3) return arr;
+      if (!arr || arr.length === 0) return [];
+      if (arr.length <= 3) return arr; // exibe 1, 2 ou 3 — sem forçar 3
       const third = Math.floor(arr.length / 3);
       const faixaCB  = arr.slice(0, third);
       const faixaMed = arr.slice(third, third * 2);
       const faixaPrem= arr.slice(third * 2);
       const rand = a => a[Math.floor(Math.random() * a.length)];
-      // Garante sem repetição
       const cb   = rand(faixaCB);
-      const med  = rand(faixaMed.filter(w => w.id !== cb.id) .length ? faixaMed.filter(w => w.id !== cb.id)  : faixaMed);
+      const med  = rand(faixaMed.filter(w => w.id !== cb.id).length ? faixaMed.filter(w => w.id !== cb.id) : faixaMed);
       const prem = rand(faixaPrem.filter(w => w.id !== cb.id && w.id !== med.id).length ? faixaPrem.filter(w => w.id !== cb.id && w.id !== med.id) : faixaPrem);
       return [cb, med, prem];
     }
 
     const display = pickThree(sorted);
-    const labels  = ['💚 Custo-Benefício', '🥂 Intermediário', '✨ Premium'];
+    const allLabels = ['💚 Custo-Benefício', '🥂 Intermediário', '✨ Premium'];
+    const labels = display.length === 1 ? ['✅ Sugestão'] :
+                   display.length === 2 ? ['💚 Custo-Benefício', '✨ Premium'] :
+                   allLabels;
     const cardsHtml = display.map((w, i) => renderCard(w, labels[i])).join('');
 
     const relaxBanner = relaxNote ? `
