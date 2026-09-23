@@ -76,10 +76,18 @@ async function downloadFile(id, token) {
 }
 
 async function listFolder(id, token) {
-  const q  = encodeURIComponent("'"+id+"' in parents and trashed=false");
-  const fl = encodeURIComponent('files(id,name,thumbnailLink,mimeType)');
-  const buf = await driveGet('/drive/v3/files?q='+q+'&fields='+fl+'&pageSize=500', token);
-  return JSON.parse(buf.toString()).files || [];
+  const q   = encodeURIComponent("'"+id+"' in parents and trashed=false");
+  const fl  = encodeURIComponent('files(id,name,mimeType),nextPageToken');
+  let files = [];
+  let pageToken = '';
+  do {
+    const pt  = pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '';
+    const buf = await driveGet('/drive/v3/files?q='+q+'&fields='+fl+'&pageSize=200'+pt, token);
+    const data = JSON.parse(buf.toString());
+    files = files.concat(data.files || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return files;
 }
 
 function normKey(s) {
