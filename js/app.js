@@ -939,20 +939,20 @@ const searchWizard = (() => {
   const STEP_PAIS = {
     key: 'pais', label: 'País de Origem', icon: '🌍',
     options: [
-      { label: 'Sem preferência', any: true },
-      { label: 'Argentina',    flag: 'ar' },
-      { label: 'Chile',        flag: 'cl' },
-      { label: 'Brasil',       flag: 'br' },
-      { label: 'França',       flag: 'fr' },
-      { label: 'Itália',       flag: 'it' },
-      { label: 'Portugal',     flag: 'pt' },
-      { label: 'Espanha',      flag: 'es' },
-      { label: 'Uruguai',      flag: 'uy' },
-      { label: 'África do Sul',flag: 'za' },
-      { label: 'Austrália',    flag: 'au' },
-      { label: 'Estados Unidos',flag:'us' },
-      { label: 'Líbano',       flag: 'lb' },
-      { label: 'Israel',       flag: 'il' },
+      { label: 'Sem preferência',  any: true },
+      { label: 'Argentina',        flag: 'ar' },
+      { label: 'Austrália',        flag: 'au' },
+      { label: 'Brasil',           flag: 'br' },
+      { label: 'Chile',            flag: 'cl' },
+      { label: 'Espanha',          flag: 'es' },
+      { label: 'Estados Unidos',   flag: 'us' },
+      { label: 'França',           flag: 'fr' },
+      { label: 'Israel',           flag: 'il' },
+      { label: 'Itália',           flag: 'it' },
+      { label: 'Líbano',           flag: 'lb' },
+      { label: 'Portugal',         flag: 'pt' },
+      { label: 'Uruguai',          flag: 'uy' },
+      { label: 'África do Sul',    flag: 'za' },
     ],
   };
 
@@ -961,9 +961,9 @@ const searchWizard = (() => {
     key: 'pais', label: 'País de Origem', icon: '🌍',
     options: [
       { label: 'Sem preferência', any: true },
-      { label: 'Brasil',  flag: 'br' },
-      { label: 'França',  flag: 'fr' },
-      { label: 'Espanha', flag: 'es' },
+      { label: 'Brasil',          flag: 'br' },
+      { label: 'Espanha',         flag: 'es' },
+      { label: 'Itália',          flag: 'it' },
     ],
   };
   const STEP_HARMONIZACAO = {
@@ -1004,18 +1004,34 @@ const searchWizard = (() => {
   };
 
   const FLOW_TINTO     = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_TINTO,  STEP_PAIS, STEP_HARMONIZACAO];
-  const FLOW_BRANCO    = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_BRANCO, STEP_PAIS, STEP_HARMONIZACAO];
+  const STEP_PAIS_BRANCO = {
+    key: 'pais', label: 'País de Origem', icon: '🌍',
+    options: [
+      { label: 'Sem preferência', any: true },
+      { label: 'Argentina',       flag: 'ar' },
+      { label: 'Brasil',          flag: 'br' },
+      { label: 'Chile',           flag: 'cl' },
+      { label: 'Espanha',         flag: 'es' },
+      { label: 'França',          flag: 'fr' },
+      { label: 'Itália',          flag: 'it' },
+      { label: 'Nova Zelândia',   flag: 'nz' },
+      { label: 'Portugal',        flag: 'pt' },
+    ],
+  };
+
+  const FLOW_BRANCO    = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_BRANCO, STEP_PAIS_BRANCO, STEP_HARMONIZACAO];
   const FLOW_VINHO     = FLOW_TINTO; // fallback
   // Países com rosé no catálogo
   const STEP_PAIS_ROSE = {
     key: 'pais', label: 'País de Origem', icon: '🌍',
     options: [
       { label: 'Sem preferência', any: true },
-      { label: 'Portugal',  flag: 'pt' },
-      { label: 'França',    flag: 'fr' },
-      { label: 'Argentina', flag: 'ar' },
-      { label: 'Espanha',   flag: 'es' },
-      { label: 'Chile',     flag: 'cl' },
+      { label: 'Argentina',       flag: 'ar' },
+      { label: 'Chile',           flag: 'cl' },
+      { label: 'Espanha',         flag: 'es' },
+      { label: 'França',          flag: 'fr' },
+      { label: 'Itália',          flag: 'it' },
+      { label: 'Portugal',        flag: 'pt' },
     ],
   };
 
