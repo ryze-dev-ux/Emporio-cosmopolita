@@ -853,7 +853,7 @@ const searchWizard = (() => {
       { label: 'R$ 130 a R$ 200',  min: 130, max: 200       },
       { label: 'R$ 200 a R$ 250',  min: 200, max: 250       },
       { label: 'R$ 250 a R$ 300',  min: 250, max: 300       },
-      { label: 'Acima de R$ 300',  min: 300, max: Infinity  },
+      { label: 'Acima de R$ 300',  min: 300, max: 99999     },
     ],
   };
   const STEP_TIPO = {
@@ -861,6 +861,7 @@ const searchWizard = (() => {
     options: [
       { label: 'Vinho Tinto'  },
       { label: 'Vinho Branco' },
+      { label: 'Vinho Rosé'   },
       { label: 'Espumante'    },
     ],
   };
@@ -875,7 +876,16 @@ const searchWizard = (() => {
     ],
   };
   // Estilo: espumantes — método e doçura específicos
-  const STEP_ESTILO_ESPUMANTE = {
+  const STEP_ESTILO_ROSE = {
+    key: 'estilo', label: 'Estilo', icon: '✨',
+    options: [
+      { label: 'Seco'           },
+      { label: 'Suave'          },
+      { label: 'Sem preferência', any: true },
+    ],
+  };
+
+    const STEP_ESTILO_ESPUMANTE = {
     key: 'estilo', label: 'Estilo', icon: '✨',
     options: [
       { label: 'Sem preferência', any: true },
@@ -981,9 +991,35 @@ const searchWizard = (() => {
   };
 
   /* ── Fluxos por tipo de bebida ─────────────────────────────────────── */
+  const STEP_HARMONIZACAO_ROSE = {
+    key: 'harmonizacao', label: 'Harmonização', icon: '🍽️',
+    options: [
+      { label: 'Peixes e Frutos do Mar' },
+      { label: 'Carnes Brancas'         },
+      { label: 'Massas e Risotos'       },
+      { label: 'Queijos e Frios'        },
+      { label: 'Aperitivos'             },
+      { label: 'Sem preferência', any: true },
+    ],
+  };
+
   const FLOW_TINTO     = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_TINTO,  STEP_PAIS, STEP_HARMONIZACAO];
   const FLOW_BRANCO    = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_VINHO,     STEP_UVA_BRANCO, STEP_PAIS, STEP_HARMONIZACAO];
   const FLOW_VINHO     = FLOW_TINTO; // fallback
+  // Países com rosé no catálogo
+  const STEP_PAIS_ROSE = {
+    key: 'pais', label: 'País de Origem', icon: '🌍',
+    options: [
+      { label: 'Sem preferência', any: true },
+      { label: 'Portugal',  flag: 'pt' },
+      { label: 'França',    flag: 'fr' },
+      { label: 'Argentina', flag: 'ar' },
+      { label: 'Espanha',   flag: 'es' },
+      { label: 'Chile',     flag: 'cl' },
+    ],
+  };
+
+  const FLOW_ROSE      = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ROSE, STEP_PAIS_ROSE, STEP_HARMONIZACAO_ROSE];
   const FLOW_ESPUMANTE  = [STEP_PRICE, STEP_TIPO, STEP_ESTILO_ESPUMANTE, STEP_PAIS_ESPUMANTE, STEP_HARMONIZACAO_ESPUMANTE];
 
   /* ── Retorna o fluxo ativo baseado na resposta de "tipo" ───────────── */
@@ -991,7 +1027,8 @@ const searchWizard = (() => {
     const tipo = st.answers.tipo || '';
     if (tipo === 'Espumante')    return FLOW_ESPUMANTE;
     if (tipo === 'Vinho Branco') return FLOW_BRANCO;
-    return FLOW_TINTO; // Vinho Tinto ou sem seleção
+    if (tipo === 'Vinho Rosé')   return FLOW_ROSE;
+    return FLOW_TINTO;
   }
 
   // STEPS é sempre o fluxo ativo — usado por todo o resto do wizard
@@ -1041,8 +1078,10 @@ const searchWizard = (() => {
 
       /* ── PREÇO ──────────────────────────────────────────────────────── */
       if (!o.skipPreco && ans.price) {
-        const cv = w.cost_value || 0;
-        if (cv < ans.price.min || cv > ans.price.max) return false;
+        const cv  = w.cost_value || 0;
+        const mn  = ans.price.min != null ? ans.price.min : 0;
+        const mx  = (ans.price.max != null && ans.price.max > 0) ? ans.price.max : 99999;
+        if (cv < mn || cv > mx) return false;
       }
 
       /* ── TIPO ───────────────────────────────────────────────────────── */
@@ -1052,14 +1091,17 @@ const searchWizard = (() => {
         const TIPO_MAP = {
           'vinho tinto':  ['tinto'],
           'vinho branco': ['branco'],
+          'vinho rose':   ['rose', 'rosé', 'ros'],
           'espumante':    ['espumante', 'brut', 'demi', 'moscatel', 'prosecco', 'cava', 'prossecco'],
         };
+        // Rosé espumante NÃO deve aparecer em Vinho Rosé
+        if (norm(ans.tipo) === 'vinho rose' && norm(w.type).includes('espumante')) return false;
         const keywords = TIPO_MAP[norm(ans.tipo)] || [norm(ans.tipo).replace('vinho ','')];
         if (!keywords.some(k => wt.includes(k))) return false;
       }
 
       /* ── helper: verifica se a resposta é "qualquer" ─────────────── */
-      const isAny = v => !v || norm(v) === 'sem preferencia' || norm(v) === 'sem preferencia';
+      const isAny = v => !v || norm(v).startsWith('sem prefer');
 
       /* ── ESTILO ─────────────────────────────────────────────────────── */
       if (!o.skipEstilo && ans.estilo && !isAny(ans.estilo) && w.type) {
